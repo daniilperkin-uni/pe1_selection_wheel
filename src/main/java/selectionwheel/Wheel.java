@@ -454,37 +454,31 @@ public class Wheel extends JPanel {
 				tmpString = items.get(i);
 		}
 
-		// Set it to max font size and calculate rectangle
-		int fontSize = MAXFONTSIZE;
-		g.setFont(new Font(_font.getFamily(), _font.getStyle(), fontSize));
-		FontMetrics fontMetrics = g.getFontMetrics();
-		Rectangle2D stringBounds = fontMetrics.getStringBounds(tmpString, g);
-
-		// Adjust string height / font size
+		// Height constraint: the tallest a string can be inside a section
+		// (chord of the section arc at distance stringDistanceFromEdge).
 		int maxHeight = (int) Math.floor(2 * stringDistanceFromEdge * Math.sin(Math.toRadians(delta / 2)));
-		if (stringBounds.getHeight() > maxHeight) {
-			fontSize = (int) Math.floor(fontSize * maxHeight / stringBounds.getHeight());
-			g.setFont(new Font(_font.getFamily(), _font.getStyle(), fontSize));
-			fontMetrics = g.getFontMetrics();
-			stringBounds = fontMetrics.getStringBounds(tmpString, g);
-		}
 
-		// Adjust string width
-		// If the string is too narrow, increase font until it fits
-		double K = stringBounds.getWidth() / stringBounds.getHeight();
-		maxHeight = (int) Math.floor(2 * (_radius - stringDistanceFromEdge) * Math.tan(Math.toRadians(delta / 2))
-				/ (1 + 2 * K * Math.tan(Math.toRadians(delta / 2))));
-		while (stringBounds.getWidth() < maxStringWidth) {
-			g.setFont(new Font(_font.getFamily(), _font.getStyle(), ++fontSize));
-			fontMetrics = g.getFontMetrics();
-			stringBounds = fontMetrics.getStringBounds(tmpString, g);
+		// Binary search for the largest font size where BOTH width and
+		// height constraints are satisfied. Replaces the original two
+		// while-loops that incremented/decremented by 1 (O(n) per
+		// re-rasterization). Also fixes a latent bug where the original
+		// "grow" loop could push fontSize past the height constraint
+		// without re-checking.
+		int lo = 1;
+		int hi = MAXFONTSIZE;
+		while (lo < hi) {
+			int mid = lo + (hi - lo + 1) / 2;
+			g.setFont(new Font(_font.getFamily(), _font.getStyle(), mid));
+			FontMetrics fm = g.getFontMetrics();
+			Rectangle2D bounds = fm.getStringBounds(tmpString, g);
+			if (bounds.getWidth() <= maxStringWidth && bounds.getHeight() <= maxHeight) {
+				lo = mid;
+			} else {
+				hi = mid - 1;
+			}
 		}
-		// If the string is too wide, decrease font until it fits
-		while (stringBounds.getWidth() > maxStringWidth) {
-			g.setFont(new Font(_font.getFamily(), _font.getStyle(), --fontSize));
-			fontMetrics = g.getFontMetrics();
-			stringBounds = fontMetrics.getStringBounds(tmpString, g);
-		}
+		int fontSize = lo;
+		g.setFont(new Font(_font.getFamily(), _font.getStyle(), fontSize));
 
 		return Math.min(fontSize, MAXFONTSIZE);
 	}

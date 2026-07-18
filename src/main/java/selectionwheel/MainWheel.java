@@ -1,10 +1,17 @@
 package selectionwheel;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Random;
 
 /**
  * MainWheel is the main class for the SelectionWheel program.
@@ -15,19 +22,30 @@ import java.util.ArrayList;
  * polling, it registers a {@link WheelListener} on the wheel and
  * updates its info labels via callbacks delivered on the EDT.
  *
- * <p>The wheel supports displaying various items and updates its
- * state as it spins.
+ * <p>UX features:
+ * <ul>
+ *   <li>Resize-resilient layout via {@link BorderLayout} (no hardcoded
+ *       pixel coordinates).</li>
+ *   <li>Keyboard shortcuts: {@code Space} or {@code Enter} to spin.</li>
+ *   <li>Inline result label and "Spin" button (no modal dialog blocking
+ *       the flow).</li>
+ * </ul>
  */
 public class MainWheel {
 
 	private final JLabel selectedItemLabel = new JLabel("(selection)");
 	private final JLabel rotationAngleLabel = new JLabel("(angle)");
 	private final JLabel spinSpeedLabel = new JLabel("(speed)");
+	private final JLabel resultLabel = new JLabel("Spin the wheel!");
+	private final JButton spinButton = new JButton("Spin");
+
+	private SelectionWheel wheel;
+	private final Random random = new Random();
 
 	/**
 	 * The main method initializes the GUI components and registers
-	 * a WheelListener that updates the info labels and shows a
-	 * dialog whenever the wheel comes to rest.
+	 * a WheelListener that updates the info labels and the inline
+	 * result label whenever the wheel comes to rest.
 	 *
 	 * <p>Preconditions: the bundled itemlist.txt resource must be
 	 * present on the classpath and non-empty.
@@ -53,22 +71,25 @@ public class MainWheel {
 	}
 
 	private void launch(ArrayList<String> items) {
-		// Set the dimensions for the GUI window
-		int windowWidth = 1000, windowHeight = 1000;
-
-		// Initialize the main JFrame and set its default behavior
 		JFrame mainWindow = new JFrame("Selection Wheel");
 		mainWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		mainWindow.setLayout(new BorderLayout(10, 10));
+		mainWindow.getRootPane().setBorder(new EmptyBorder(10, 10, 10, 10));
 
 		// Initialize the SelectionWheel and configure its properties
-		SelectionWheel wheel = new SelectionWheel(items);
+		wheel = new SelectionWheel(items);
 		wheel.hasBorders(true);
-		wheel.setBounds(10, 10, 700, 700);
 
-		mainWindow.add(wheel);
+		// The wheel goes in the center - BorderLayout will resize it automatically.
+		mainWindow.add(wheel, BorderLayout.CENTER);
 
-		// Set up the labels and components for displaying wheel information in the main window
-		setupMainWindowComponents(mainWindow);
+		// Info panel on the right (replaces hardcoded x/y labels)
+		JPanel infoPanel = createInfoPanel();
+		mainWindow.add(infoPanel, BorderLayout.EAST);
+
+		// Control bar at the bottom (replaces the modal JOptionPane)
+		JPanel controlPanel = createControlPanel();
+		mainWindow.add(controlPanel, BorderLayout.SOUTH);
 
 		// Register an event-driven listener instead of busy-wait polling.
 		wheel.addWheelListener(new WheelListener() {
@@ -79,66 +100,115 @@ public class MainWheel {
 
 			@Override
 			public void rotationChanged(double angleDegrees) {
-				rotationAngleLabel.setText(Double.toString(angleDegrees));
+				rotationAngleLabel.setText(String.format("%.1f", angleDegrees));
 			}
 
 			@Override
 			public void spinSpeedChanged(double speedDegreesPerSecond) {
-				spinSpeedLabel.setText(Double.toString(speedDegreesPerSecond));
+				spinSpeedLabel.setText(String.format("%.1f", speedDegreesPerSecond));
+			}
+
+			@Override
+			public void spinStarted() {
+				spinButton.setEnabled(false);
+				resultLabel.setText("Spinning...");
 			}
 
 			@Override
 			public void spinStopped() {
-				// Update the speed label one last time (it's now 0).
 				spinSpeedLabel.setText("0.0");
-				JOptionPane.showMessageDialog(mainWindow,
-						"Selection: " + wheel.getSelectedItem());
+				spinButton.setEnabled(true);
+				resultLabel.setText("Selection: " + wheel.getSelectedItem());
 			}
 		});
 
 		// Initialize the labels with default values
 		selectedItemLabel.setText(wheel.getSelectedItem());
-		rotationAngleLabel.setText(Double.toString(wheel.getRotationAngle()));
+		rotationAngleLabel.setText(String.format("%.1f", wheel.getRotationAngle()));
 		spinSpeedLabel.setText("0.0");
 
-		// Configure the mainWindow's layout and visibility
-		mainWindow.setSize(windowWidth, windowHeight);
-		mainWindow.setLayout(null);
-		// Stop any in-flight spin when the window is closed, so no orphan timer lingers.
+		// Keyboard shortcuts: Space / Enter to spin
+		int condition = JComponent.WHEN_IN_FOCUSED_WINDOW;
+		InputMap im = mainWindow.getRootPane().getInputMap(condition);
+		ActionMap am = mainWindow.getRootPane().getActionMap();
+		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "spin");
+		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "spin");
+		am.put("spin", new AbstractAction() {
+			@Override
+			public void actionPerformed(java.awt.event.ActionEvent e) {
+				triggerRandomSpin();
+			}
+		});
+
+		// Stop any in-flight spin when the window is closed.
 		mainWindow.addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
-				wheel.spinStop();
+				if (wheel != null) wheel.spinStop();
 			}
 		});
+
+		// Resizable window with a sensible default size.
+		mainWindow.setPreferredSize(new Dimension(1000, 800));
+		mainWindow.setMinimumSize(new Dimension(600, 500));
+		mainWindow.pack();
+		mainWindow.setLocationRelativeTo(null);
 		mainWindow.setVisible(true);
 	}
 
 	/**
-	 * Sets up the main window components for the application.
-	 *
-	 * This method initializes and positions labels in the main window
-	 * to display information such as the current selection, rotation angle,
-	 * and spinning speed of the SelectionWheel. The components are added
-	 * to the specified JFrame.
-	 *
-	 * @param mainWindow the JFrame to which the components are added
+	 * Creates the info panel with labels showing selection, angle, and speed.
+	 * Uses GridBagLayout for proper vertical stacking and label alignment.
 	 */
-	private void setupMainWindowComponents(JFrame mainWindow) {
-		JLabel selectionLabel = new JLabel("Selection: ");
-		JLabel angleLabel = new JLabel("Angle: ");
-		JLabel speedLabel = new JLabel("Speed: ");
-		selectionLabel.setBounds(720, 10, 100, 20);
-		selectedItemLabel.setBounds(830, 10, 150, 20);
-		angleLabel.setBounds(720, 30, 100, 20);
-		rotationAngleLabel.setBounds(830, 30, 150, 20);
-		speedLabel.setBounds(720, 50, 100, 20);
-		spinSpeedLabel.setBounds(830, 50, 150, 20);
-		mainWindow.add(selectionLabel);
-		mainWindow.add(angleLabel);
-		mainWindow.add(speedLabel);
-		mainWindow.add(selectedItemLabel);
-		mainWindow.add(rotationAngleLabel);
-		mainWindow.add(spinSpeedLabel);
+	private JPanel createInfoPanel() {
+		JPanel panel = new JPanel(new GridBagLayout());
+		panel.setBorder(BorderFactory.createTitledBorder("Info"));
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.insets = new Insets(4, 4, 4, 4);
+		gbc.anchor = GridBagConstraints.WEST;
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+
+		JLabel selectionCaption = new JLabel("Selection:");
+		JLabel angleCaption = new JLabel("Angle:");
+		JLabel speedCaption = new JLabel("Speed:");
+
+		gbc.gridx = 0; gbc.gridy = 0; panel.add(selectionCaption, gbc);
+		gbc.gridx = 1; gbc.gridy = 0; panel.add(selectedItemLabel, gbc);
+		gbc.gridx = 0; gbc.gridy = 1; panel.add(angleCaption, gbc);
+		gbc.gridx = 1; gbc.gridy = 1; panel.add(rotationAngleLabel, gbc);
+		gbc.gridx = 0; gbc.gridy = 2; panel.add(speedCaption, gbc);
+		gbc.gridx = 1; gbc.gridy = 2; panel.add(spinSpeedLabel, gbc);
+
+		// Push remaining space to the top so labels don't center vertically.
+		gbc.weighty = 1.0;
+		gbc.gridx = 0; gbc.gridy = 3; panel.add(Box.createGlue(), gbc);
+
+		return panel;
+	}
+
+	/**
+	 * Creates the control bar with a result label and a Spin button.
+	 * Replaces the original blocking JOptionPane.
+	 */
+	private JPanel createControlPanel() {
+		JPanel panel = new JPanel(new BorderLayout(10, 0));
+		panel.setBorder(new EmptyBorder(8, 0, 0, 0));
+		resultLabel.setFont(resultLabel.getFont().deriveFont(Font.BOLD, 14f));
+		panel.add(resultLabel, BorderLayout.CENTER);
+		spinButton.setPreferredSize(new Dimension(100, 30));
+		spinButton.addActionListener(e -> triggerRandomSpin());
+		panel.add(spinButton, BorderLayout.EAST);
+		return panel;
+	}
+
+	/**
+	 * Starts a random spin: random speed in [180, 360] deg/s,
+	 * random direction, using the wheel's default deceleration.
+	 */
+	private void triggerRandomSpin() {
+		if (wheel == null || wheel.isSpinning()) return;
+		double speed = 180 + random.nextDouble() * 180;
+		int direction = random.nextBoolean() ? 1 : -1;
+		wheel.spinStartAsync(speed, direction, wheel.getSpinDeceleration());
 	}
 }
