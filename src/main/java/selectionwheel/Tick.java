@@ -6,10 +6,23 @@ import java.awt.Polygon;
 import java.awt.RenderingHints;
 import javax.swing.JPanel;
 
+/**
+ * Visual component that renders the "tick" (pointer) attached to a
+ * {@link Wheel}. The pointer is the small triangle (or custom polygon)
+ * at the right edge of the wheel that indicates the currently selected
+ * section.
+ *
+ * <p>All polygon geometry is delegated to {@link TickMath}, which is
+ * pure and unit-tested. Notably, {@link TickMath#adjustPolygon} returns
+ * a fresh {@link Polygon} on each call, so repeated repaints no longer
+ * compound scaling factors (the original in-place version did).
+ */
 @SuppressWarnings("serial")
 public class Tick extends JPanel {
 
+	/** Original polygon supplied by the user via {@link #setPolygon}. Never mutated. */
 	private Polygon _polygon_orig = null;
+	/** Current polygon to render, either the default triangle or an adjusted copy of {@link #_polygon_orig}. */
 	private Polygon _polygon = null;
 
 	private int _tickWidth = 20;
@@ -45,18 +58,21 @@ public class Tick extends JPanel {
 
 	public Polygon getPolygon() {
 		/*
-		 * Get polygon shape of the tick.
+		 * Get the polygon shape of the tick as last rendered. May be null
+		 * if {@link #paintComponent} has not yet been called.
 		 */
 		return _polygon;
 	}
 
 	public void setPolygon(Polygon polygon) {
 		/*
-		 * Set polygon shape of the tick.
+		 * Set the custom polygon shape of the tick. The polygon is stored
+		 * by reference but never mutated; on each repaint a fresh, scaled
+		 * and centered copy is produced via {@link TickMath#adjustPolygon}.
 		 */
 		_polygon_orig = polygon;
-		_polygon = polygon;
-		adjustPolygon();
+		// Force recompute on next paint.
+		_polygon = null;
 		this.repaint();
 	}
 
@@ -65,79 +81,35 @@ public class Tick extends JPanel {
 		this.repaint();
 	}
 
-	private void adjustPolygon()
-	{
-		/*
-		 * Adjust the size and position of the custom polygon shape of the tick.
-		 */
-		int i;
-		// calculate width/height of the polygon
-		int xmax = Integer.MIN_VALUE, xmin = Integer.MAX_VALUE;
-		int ymax = xmax, ymin = xmin;
-		for(i = 0; i < _polygon.xpoints.length; i++)
-		{
-			if(_polygon.xpoints[i]>xmax) xmax = _polygon.xpoints[i];
-			if(_polygon.xpoints[i]<xmin) xmin = _polygon.xpoints[i];
-		}
-		for(i = 0; i < _polygon.ypoints.length; i++)
-		{
-			if(_polygon.ypoints[i]>ymax) ymax = _polygon.ypoints[i];
-			if(_polygon.ypoints[i]<ymin) ymin = _polygon.ypoints[i];
-		}
-		int width = xmax - xmin;
-		// scale polygon
-		double factor = (double)this.getWidth() / width;
-		for(i = 0; i < _polygon.xpoints.length; i++)
-		{
-			_polygon.xpoints[i] *= factor;
-			_polygon.ypoints[i] *= factor;
-		}
-		// calculate center of polygon
-		int centerX = 0, centerY = 0;
-		for(i = 0; i < _polygon.xpoints.length; i++)
-		{
-			centerX += _polygon.xpoints[i];
-		}
-		centerX /= _polygon.xpoints.length;
-		for(i = 0; i < _polygon.ypoints.length; i++)
-		{
-			centerY += _polygon.ypoints[i];
-		}
-		centerY /= _polygon.ypoints.length;
-		// translate polygon to center of the panel
-		_polygon.translate(this.getWidth() / 2 - centerX, this.getHeight() / 2 - centerY);
-	}
-
 	private Polygon getTriangle() {
 		/*
-		 * Get triangle polygon - default shape of the tick.
+		 * Get the default triangle polygon (pointing left into the wheel).
+		 * Delegates to {@link TickMath} so the geometry is testable.
 		 */
-		Polygon polygon = new Polygon();
-		polygon.addPoint(0, this.getHeight() / 2);
-		polygon.addPoint(this.getWidth(), (int)(this.getHeight() / 2 - this.getWidth() * Math.tan(Math.toRadians(30))));
-		polygon.addPoint(this.getWidth(), (int)(this.getHeight() / 2 + this.getWidth() * Math.tan(Math.toRadians(30))));
-		return polygon;
+		return TickMath.computeDefaultTriangle(getWidth(), getHeight());
 	}
 
 	@Override
-	public void paintComponent(Graphics g)
-	{
+	public void paintComponent(Graphics g) {
 		/*
 		 * Paintcomponent.
-		 * If custom polygon is not set, use default triangle.
+		 * If a custom polygon is set, scale and center it via TickMath;
+		 * otherwise use the default triangle.
 		 */
 		super.paintComponent(g);
 		Graphics2D g2d = (Graphics2D) g;
 		RenderingHints rh = new RenderingHints(
 				RenderingHints.KEY_ANTIALIASING,
-				RenderingHints.VALUE_ANTIALIAS_ON
-			);
+				RenderingHints.VALUE_ANTIALIAS_ON);
 		g2d.addRenderingHints(rh);
 
-		if(_polygon_orig == null)
+		if (_polygon_orig == null) {
 			_polygon = getTriangle();
-		else
-			adjustPolygon();
+		} else {
+			// TickMath.adjustPolygon returns a fresh polygon - never mutates
+			// _polygon_orig, so repeated repaints are idempotent.
+			_polygon = TickMath.adjustPolygon(_polygon_orig, getWidth(), getHeight());
+		}
 		g2d.fillPolygon(_polygon);
 	}
 }

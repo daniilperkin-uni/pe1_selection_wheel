@@ -2,7 +2,7 @@ package selectionwheel;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.util.*;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.*;
@@ -15,17 +15,23 @@ import java.awt.image.BufferedImage;
  * divided into labeled sections. The wheel can be rotated by dragging
  * the mouse and spun with a decelerating angular velocity.
  *
- * <h2>Threading contract</h2>
- * All public mutators ({@link #setRotationAngle}, {@link #spinStartAsync},
- * {@link #spinStop}, {@link #setListOfStrings}, ...) must be invoked on the
- * Swing Event Dispatch Thread. {@link WheelListener} callbacks are also
- * delivered on the EDT.
+ * <h2>Architecture</h2>
+ * <ul>
+ *   <li>{@link WheelModel} holds the wheel's pure state: items, rotation
+ *       angle, spin parameters. All math goes through {@link WheelMath}
+ *       and spin physics through {@link SpinStep}, both of which are
+ *       pure functions.</li>
+ *   <li>This class ({@code Wheel}) is the view: a {@link JPanel} that
+ *       paints the model and routes mouse/keyboard events into model
+ *       mutations. It owns no domain logic.</li>
+ *   <li>State mutations triggered by the user (mouse drag, release)
+ *       call into the model via the public mutators, then repaint and
+ *       fire {@link WheelListener} events on the EDT.</li>
+ * </ul>
  *
- * <p>State mutation happens exclusively on the EDT (mouse events, the
- * internal swing {@link Timer}, and {@link #paintComponent}), so no
- * explicit synchronization is required. Fields are marked
- * {@code volatile} only as a defensive measure for read-only access from
- * non-EDT threads (e.g., a status poller).
+ * <h2>Threading contract</h2>
+ * All public mutators must be invoked on the Swing EDT.
+ * {@link WheelListener} callbacks are also delivered on the EDT.
  */
 @SuppressWarnings("serial")
 public class Wheel extends JPanel {
@@ -35,12 +41,14 @@ public class Wheel extends JPanel {
 		UMBRELLA
 	}
 
+	/** Pure state holder. All math goes through {@link WheelMath} / {@link SpinStep}. */
+	private final WheelModel _model;
+
+	// ----- render cache (synced from _model on mutation) -----
 	private volatile Image _image = null;
-	private boolean hasBorders = false;
-	private double _delta;
+	private boolean _hasBorders = false;
 	private Point2D _imagePosition;
 	private Point2D _rotationCenter;
-	private volatile double _rotationAngle = 0;
 	private double _zoomFactor = 1;
 
 	private List<Color> _colors;
@@ -51,33 +59,79 @@ public class Wheel extends JPanel {
 	private int _radius;
 	private Point2D _center = new Point2D.Double();
 
-	List<String> _stringList;
-	private int _noElem;
-	private final int LIMIT = 100;
-	private final int MAXFONTSIZE = 80, MINFONTSIZE = 10;
 	private final Font DEFAULTFONT = new Font("TimesRoman", Font.PLAIN, 12);
 	private Font _font = DEFAULTFONT;
 
-	private volatile boolean _spinOnOff = false;
-	private volatile double _spinSpeed = 0;
-	private volatile double _maxSpinSpeed = 360;
-	private volatile double _spinDeceleration = -20;
-	private final int _refreshRate = 100;
-	private long _timeStart, _timeEnd;
-	private double _rotationAngleStart, _rotationAngleEnd;
+	private long _timeStart;
+	private double _rotationAngleStart;
 	private Point2D _mouseDragPosition;
 
 	/** Drives the decelerating spin on the EDT. Replaces the raw Thread + Thread.sleep loop. */
 	private Timer _spinTimer = null;
-	/** Speed and direction of the current spin, captured when {@link #spinStartAsync} is invoked. */
-	private double _activeSpinSpeed;
-	private int _activeSpinDirection;
-	private double _activeSpinDeceleration;
 
 	/** Last item reported via {@link WheelListener#selectionChanged} - dedupes events. */
 	private String _lastReportedSelection = null;
 
 	private final List<WheelListener> _listeners = new ArrayList<>();
+
+	public Wheel(List<String> listOfStrings) {
+		/*
+		 * Constructor of the class.
+		 * Sets the model, adds mouse listeners.
+		 */
+		_model = new WheelModel(listOfStrings);
+
+		addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				_mouseDragPosition = new Point2D.Double(e.getX(), e.getY());
+				// to stop the spinning if the circle is clicked on
+				double distance = Math.sqrt(
+						Math.pow(_mouseDragPosition.getX() - _center.getX(), 2)
+								+ Math.pow(_mouseDragPosition.getY() - _center.getY(), 2));
+				if (distance <= _radius) {
+					spinStop();
+				}
+				// to measure initial speed
+				_timeStart = System.currentTimeMillis();
+				_rotationAngleStart = _model.getRotationAngleDeg();
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent e) {
+				setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+				// to measure initial speed
+				long timeEnd = System.currentTimeMillis();
+				double initialSpeed = WheelMath.computeInitialSpeedDegPerSec(
+						_rotationAngleStart, _model.getRotationAngleDeg(),
+						_timeStart, timeEnd, _model.getMaxSpinSpeedDegPerSec());
+				if (Math.abs(initialSpeed) > 0) {
+					spinStartAsync(Math.abs(initialSpeed), (int) Math.signum(initialSpeed),
+							_model.getSpinDeceleration());
+				}
+			}
+		});
+
+		addMouseMotionListener(new MouseAdapter() {
+			@Override
+			public void mouseDragged(MouseEvent e) {
+				setCursor(new Cursor(Cursor.HAND_CURSOR));
+				spinStop();
+				/*
+				 * Use the equation for angle between two vectors:
+				 * vector 1 between last position of mouse and center of circle
+				 * vector 2 between current position of mouse and center of circle
+				 * ("k" is direction coefficient)
+				 */
+				Point2D mousePos = new Point2D.Double(e.getX(), e.getY());
+				double delta = WheelMath.dragDeltaDeg(_mouseDragPosition, mousePos, _rotationCenter);
+				if (delta != 0) {
+					setRotationAngle(getRotationAngle() + delta);
+				}
+				_mouseDragPosition = mousePos;
+			}
+		});
+	}
 
 	@Override
 	public void setBounds(int x, int y, int width, int height) {
@@ -90,7 +144,7 @@ public class Wheel extends JPanel {
 		 * Borders on/off.
 		 * If switched on, borders of sections and circle + circle center will be visible.
 		 */
-		hasBorders = borders;
+		_hasBorders = borders;
 		_image = null;
 		spinStop();
 		setRotationAngle(0);
@@ -113,29 +167,29 @@ public class Wheel extends JPanel {
 		/*
 		 * Get current rotation of the wheel.
 		 */
-		return _rotationAngle;
+		return _model.getRotationAngleDeg();
 	}
 
 	public void setRotationAngle(double rotationAngle) {
 		/*
 		 * Set the current rotation of the wheel.
 		 */
-		_rotationAngle = rotationAngle % 360;
+		_model.setRotationAngleDeg(rotationAngle);
 		this.repaint();
-		fireRotationChanged(_rotationAngle);
+		fireRotationChanged(_model.getRotationAngleDeg());
 		fireSelectionChangedMaybe();
 	}
 
 	public List<Color> getColorScheme() {
 		/*
-		 * Get ArrayList of colors used for sections of the wheel.
+		 * Get List of colors used for sections of the wheel.
 		 */
 		return _colors;
 	}
 
 	public void setColorScheme(List<Color> colors) {
 		/*
-		 * Set ArrayList of colors used for sections of the wheel.
+		 * Set List of colors used for sections of the wheel.
 		 */
 		_colors = colors;
 		_image = null;
@@ -169,7 +223,7 @@ public class Wheel extends JPanel {
 		/*
 		 * Get list of strings displayed inside the sections of the wheel.
 		 */
-		return _stringList;
+		return _model.getItems();
 	}
 
 	public void setListOfStrings(List<String> list) {
@@ -177,17 +231,7 @@ public class Wheel extends JPanel {
 		 * Set list of strings displayed inside the sections of the wheel.
 		 * The initial list is set in constructor method and can be changed during runtime.
 		 */
-		if (list == null) {
-			throw new IllegalArgumentException("list must not be null");
-		}
-		_noElem = list.size();
-		if (_noElem == 0) {
-			throw new IllegalArgumentException("list must not be empty (would produce NaN delta)");
-		}
-		if (_noElem > LIMIT)
-			throw new IllegalArgumentException("String list is larger than limit (" + LIMIT + ")");
-		_delta = (double) 360 / (double) _noElem;
-		_stringList = list;
+		_model.setItems(list);
 		_image = null;
 		spinStop();
 		setRotationAngle(0);
@@ -220,14 +264,14 @@ public class Wheel extends JPanel {
 		 * Get current spinning speed in degrees per second.
 		 * If the spinning is off, it returns 0.
 		 */
-		return _spinOnOff ? _spinSpeed : 0;
+		return _model.getSpinSpeedDegPerSec();
 	}
 
 	public double getMaxSpinSpeed() {
 		/*
 		 * Get current speed limit.
 		 */
-		return _maxSpinSpeed;
+		return _model.getMaxSpinSpeedDegPerSec();
 	}
 
 	public void setMaxSpinSpeed(double speed) {
@@ -235,121 +279,40 @@ public class Wheel extends JPanel {
 		 * Set current speed limit.
 		 */
 		spinStop();
-		_maxSpinSpeed = speed;
+		_model.setMaxSpinSpeedDegPerSec(speed);
 	}
 
 	public double getSpinDeceleration() {
-		return _spinDeceleration;
+		return _model.getSpinDeceleration();
 	}
 
 	public void setSpinDeceleration(double deceleration) {
-		if (deceleration > 0) {
-			throw new IllegalArgumentException(
-					"deceleration must be <= 0 (was " + deceleration + ")");
-		}
-		_spinDeceleration = deceleration;
+		_model.setSpinDeceleration(deceleration);
 	}
 
 	public boolean isSpinning() {
 		/*
 		 * Check if the wheel is spinning.
 		 */
-		return _spinOnOff;
+		return _model.isSpinning();
 	}
 
 	public String getSelectedString() {
 		/*
 		 * Get current selection.
-		 * Returns the string which is displayed in the section of the wheel that is currently positioned between 0 and delta degrees.
-		 * The idea is to get the number of deltas in current rotationAngle.
-		 * This number is added to the size of the string arraylist, and then MODed by the size of the string arraylist,
-		 * in order to avoid negative indices.
+		 * Returns the string which is displayed in the section of the wheel
+		 * that is currently positioned between 0 and delta degrees.
 		 */
-		if (_stringList == null || _noElem <= 0) {
-			return null;
-		}
-		return _stringList.get((int) Math.floor(_noElem + (_rotationAngle % 360) / _delta) % _noElem);
-	}
-
-	public Wheel(List<String> listOfStrings) {
-		/*
-		 * Constructor of the class.
-		 * Sets the string list, adds mouse listeners.
-		 */
-		setListOfStrings(listOfStrings);
-
-		addMouseListener(new MouseAdapter() {
-			@Override
-			public void mousePressed(MouseEvent e) {
-				_mouseDragPosition = new Point2D.Double(e.getX(), e.getY());
-				// to stop the spinning if the circle is clicked on
-				double distance = Math.sqrt(Math.pow(_mouseDragPosition.getX() - _center.getX(), 2)
-						+ Math.pow(_mouseDragPosition.getY() - _center.getY(), 2));
-				if (distance <= _radius) {
-					spinStop();
-				}
-				// to measure initial speed
-				_timeStart = System.currentTimeMillis();
-				_rotationAngleStart = _rotationAngle;
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-				// to measure initial speed
-				_timeEnd = System.currentTimeMillis();
-				_rotationAngleEnd = _rotationAngle;
-				long elapsed = _timeEnd - _timeStart;
-				if (elapsed == 0) {
-					// Avoid division by zero: treat as no-throw click.
-					return;
-				}
-				double initialSpeed = 1000 * (_rotationAngleEnd - _rotationAngleStart) / elapsed;
-				initialSpeed = (int) Math.signum(initialSpeed)
-						* Math.min(Math.abs(initialSpeed), _maxSpinSpeed);
-
-				if (Math.abs(initialSpeed) > 0) {
-					spinStartAsync(Math.abs(initialSpeed), (int) Math.signum(initialSpeed),
-							_spinDeceleration);
-				}
-			}
-		});
-
-		addMouseMotionListener(new MouseAdapter() {
-			@Override
-			public void mouseDragged(MouseEvent e) {
-				setCursor(new Cursor(Cursor.HAND_CURSOR));
-				spinStop();
-				/*
-				 * Use the equation for angle between two vectors:
-				 * vector 1 between last position of mouse and center of circle
-				 * vector 2 between current position of mouse and center of circle
-				 * ("k" is direction coefficient)
-				 */
-				Point2D mousePos = new Point2D.Double(e.getX(), e.getY());
-				double dxPrev = _mouseDragPosition.getX() - _rotationCenter.getX();
-				double dxCurr = mousePos.getX() - _rotationCenter.getX();
-				double delta;
-				if (dxPrev == 0 || dxCurr == 0) {
-					// Avoid divide-by-zero near vertical: skip this tick (drag stays stationary).
-					_mouseDragPosition = mousePos;
-					return;
-				}
-				double k1 = (_mouseDragPosition.getY() - _rotationCenter.getY()) / dxPrev;
-				double k2 = (mousePos.getY() - _rotationCenter.getY()) / dxCurr;
-				delta = Math.toDegrees(Math.atan((k2 - k1) / (1 + k2 * k1)));
-				if (!Double.isNaN(delta))
-					setRotationAngle(getRotationAngle() + delta);
-				_mouseDragPosition = mousePos;
-			}
-		});
+		return _model.getSelectedItem();
 	}
 
 	@Override
 	public void paintComponent(Graphics g) {
 		/*
-		 * Paintcomponent - if the image is null, create it and then draw it whilst keeping the current rotation.
-		 * The image can be larger than the displaying area, so after it is drawn it needs to be placed properly.
+		 * Paintcomponent - if the image is null, create it and then draw it
+		 * whilst keeping the current rotation. The image can be larger than
+		 * the displaying area, so after it is drawn it needs to be placed
+		 * properly.
 		 */
 		super.paintComponent(g);
 
@@ -367,14 +330,21 @@ public class Wheel extends JPanel {
 		gPanel.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		gPanel.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 
-		gPanel.rotate(Math.toRadians(_rotationAngle), _rotationCenter.getX(), _rotationCenter.getY());
+		gPanel.rotate(Math.toRadians(_model.getRotationAngleDeg()),
+				_rotationCenter.getX(), _rotationCenter.getY());
 		gPanel.drawImage(_image, (int) _imagePosition.getX(), (int) _imagePosition.getY(), null);
 	}
 
 	private BufferedImage drawImage() {
 		/*
-		 * Calculate all the necessary parameters for the wheel and draw it section by section.
+		 * Calculate all the necessary parameters for the wheel and draw it
+		 * section by section.
 		 */
+		List<String> stringList = _model.getItems();
+		int noElem = _model.getNumSections();
+		double delta = _model.getSectionAngleDeg();
+		double rotationAngle = _model.getRotationAngleDeg();
+
 		int width = this.getWidth(), height = this.getHeight();
 		BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g2d = (Graphics2D) img.getGraphics();
@@ -386,7 +356,7 @@ public class Wheel extends JPanel {
 		int fontSize, stringWidth, maxStringWidth;
 
 		maxStringWidth = (int) (_radius - 2 * stringDistanceFromEdge);
-		fontSize = calcFontSize(g2d, stringDistanceFromEdge, maxStringWidth);
+		fontSize = calcFontSize(g2d, stringDistanceFromEdge, maxStringWidth, stringList, noElem, delta);
 		g2d.setFont(new Font(_font.getFamily(), _font.getStyle(), fontSize));
 
 		// Adjust the parameters (for "zoom in") - if the font size is too small
@@ -398,7 +368,7 @@ public class Wheel extends JPanel {
 			img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 			g2d = (Graphics2D) img.getGraphics();
 			maxStringWidth = (int) (_radius - 2 * stringDistanceFromEdge);
-			fontSize = calcFontSize(g2d, stringDistanceFromEdge, maxStringWidth);
+			fontSize = calcFontSize(g2d, stringDistanceFromEdge, maxStringWidth, stringList, noElem, delta);
 		}
 
 		// Calculate center point
@@ -407,10 +377,10 @@ public class Wheel extends JPanel {
 		// Set rendering hints
 		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-		g2d.rotate(Math.toRadians(_rotationAngle), _center.getX(), _center.getY());
+		g2d.rotate(Math.toRadians(rotationAngle), _center.getX(), _center.getY());
 
 		// Draw center point
-		if (hasBorders) {
+		if (_hasBorders) {
 			g2d.setColor(Color.BLACK);
 			g2d.fillArc(
 					(int) _center.getX() - (int) Math.floor(Math.max(0.01 * _radius, 1)),
@@ -425,9 +395,9 @@ public class Wheel extends JPanel {
 		if (_colors == null)
 			_colors = getDefaultColorList();
 		_colorCounter = 0;
-		for (int i = _noElem - 1; i >= 0; i--) {
+		for (int i = noElem - 1; i >= 0; i--) {
 			// Draw section border
-			if (hasBorders) {
+			if (_hasBorders) {
 				g2d.setColor(Color.BLACK);
 				g2d.drawLine((int) _center.getX(), (int) _center.getY(),
 						(int) _center.getX() + _radius, (int) _center.getY());
@@ -435,37 +405,44 @@ public class Wheel extends JPanel {
 			// Fill section depending on the chosen shape
 			g2d.setColor(_colors.get(_colorCounter++ % _colors.size()));
 			if (_shape == Shape.UMBRELLA)
-				fillTriangle(g2d);
+				fillTriangle(g2d, delta);
 			else //if(_shape == Shape.CIRCLE)
-				fillArc(g2d);
-			// Draw string - rotate half delta, then draw then rotate the other half (to have the string in the middle)
-			g2d.rotate(Math.toRadians(_delta / 2), _center.getX(), _center.getY());
+				fillArc(g2d, delta);
+			// Draw string - rotate half delta, then draw then rotate the other half
+			// (to have the string in the middle of the section)
+			g2d.rotate(Math.toRadians(delta / 2), _center.getX(), _center.getY());
 			g2d.setColor(Color.BLACK);
 			fontMetrics = g2d.getFontMetrics();
-			stringWidth = fontMetrics.stringWidth(_stringList.get(i));
-			g2d.drawString(_stringList.get(i),
+			stringWidth = fontMetrics.stringWidth(stringList.get(i));
+			g2d.drawString(stringList.get(i),
 					(int) (_center.getX() + maxStringWidth - stringWidth + stringDistanceFromEdge),
 					(int) (_center.getY() + (double) fontMetrics.getHeight() / 2
 							- fontMetrics.getMaxDescent()));
-			g2d.rotate(Math.toRadians(_delta / 2), _center.getX(), _center.getY());
+			g2d.rotate(Math.toRadians(delta / 2), _center.getX(), _center.getY());
 		}
 
 		return img;
 	}
 
-	private int calcFontSize(Graphics g, double stringDistanceFromEdge, int maxStringWidth) {
+	private static final int MAXFONTSIZE = 80;
+	private static final int MINFONTSIZE = 10;
+	private static final int LIMIT = 100;
+
+	private int calcFontSize(Graphics g, double stringDistanceFromEdge, int maxStringWidth,
+			List<String> stringList, int noElem, double delta) {
 		/*
 		 * Calculates the optimal font size for the strings inside the sections.
 		 * The strings need to be positioned next to the broader end of the section.
-		 * The optimal size will depend on the longest string length and maximum height of the section
-		 * in the left border of the rectangle surrounding the string.
+		 * The optimal size will depend on the longest string length and maximum
+		 * height of the section in the left border of the rectangle surrounding
+		 * the string.
 		 */
 
 		// Find the longest string
 		String tmpString = "";
-		for (int i = _noElem - 1; i >= 0; i--) {
-			if (_stringList.get(i).length() > tmpString.length())
-				tmpString = _stringList.get(i);
+		for (int i = noElem - 1; i >= 0; i--) {
+			if (stringList.get(i).length() > tmpString.length())
+				tmpString = stringList.get(i);
 		}
 
 		// Set it to max font size and calculate rectangle
@@ -475,7 +452,7 @@ public class Wheel extends JPanel {
 		Rectangle2D stringBounds = fontMetrics.getStringBounds(tmpString, g);
 
 		// Adjust string height / font size
-		int maxHeight = (int) Math.floor(2 * stringDistanceFromEdge * Math.sin(Math.toRadians(_delta / 2)));
+		int maxHeight = (int) Math.floor(2 * stringDistanceFromEdge * Math.sin(Math.toRadians(delta / 2)));
 		if (stringBounds.getHeight() > maxHeight) {
 			fontSize = (int) Math.floor(fontSize * maxHeight / stringBounds.getHeight());
 			g.setFont(new Font(_font.getFamily(), _font.getStyle(), fontSize));
@@ -486,8 +463,8 @@ public class Wheel extends JPanel {
 		// Adjust string width
 		// If the string is too narrow, increase font until it fits
 		double K = stringBounds.getWidth() / stringBounds.getHeight();
-		maxHeight = (int) Math.floor(2 * (_radius - stringDistanceFromEdge) * Math.tan(Math.toRadians(_delta / 2))
-				/ (1 + 2 * K * Math.tan(Math.toRadians(_delta / 2))));
+		maxHeight = (int) Math.floor(2 * (_radius - stringDistanceFromEdge) * Math.tan(Math.toRadians(delta / 2))
+				/ (1 + 2 * K * Math.tan(Math.toRadians(delta / 2))));
 		while (stringBounds.getWidth() < maxStringWidth) {
 			g.setFont(new Font(_font.getFamily(), _font.getStyle(), ++fontSize));
 			fontMetrics = g.getFontMetrics();
@@ -503,33 +480,33 @@ public class Wheel extends JPanel {
 		return Math.min(fontSize, MAXFONTSIZE);
 	}
 
-	private void fillArc(Graphics g2d) {
+	private void fillArc(Graphics g2d, double delta) {
 		g2d.fillArc((int) _center.getX() - _radius, (int) _center.getY() - _radius,
-				2 * _radius, 2 * _radius, 0, (int) -Math.ceil(_delta));
+				2 * _radius, 2 * _radius, 0, (int) -Math.ceil(delta));
 		// use ceil because of decimal part (would be left empty)
-		if (hasBorders) {
+		if (_hasBorders) {
 			g2d.setColor(Color.black);
 			g2d.drawArc((int) _center.getX() - _radius, (int) _center.getY() - _radius,
-					2 * _radius, 2 * _radius, 0, (int) -Math.ceil(_delta));
+					2 * _radius, 2 * _radius, 0, (int) -Math.ceil(delta));
 		}
 	}
 
-	private void fillTriangle(Graphics2D g2d) {
+	private void fillTriangle(Graphics2D g2d, double delta) {
 		/*
 		 * Method that draws section as a triangle (in case Shape=UMBRELLA was chosen)
 		 */
 		int[] xpoints = new int[3];
 		xpoints[0] = (int) _center.getX();
 		xpoints[1] = (int) _center.getX() + _radius;
-		int dx = (int) (2 * _radius * Math.pow(Math.sin(Math.toRadians(_delta / 2)), 2));
+		int dx = (int) (2 * _radius * Math.pow(Math.sin(Math.toRadians(delta / 2)), 2));
 		xpoints[2] = xpoints[1] - dx;
 		int[] ypoints = new int[3];
 		ypoints[0] = (int) _center.getY();
 		ypoints[1] = (int) _center.getY();
-		int dy = (int) (2 * _radius * Math.sin(Math.toRadians(_delta / 2)) * Math.cos(Math.toRadians(_delta / 2)));
+		int dy = (int) (2 * _radius * Math.sin(Math.toRadians(delta / 2)) * Math.cos(Math.toRadians(delta / 2)));
 		ypoints[2] = ypoints[1] + dy;
 		g2d.fillPolygon(xpoints, ypoints, 3);
-		if (hasBorders) {
+		if (_hasBorders) {
 			g2d.setColor(Color.black);
 			g2d.drawLine(xpoints[1], ypoints[1], xpoints[2], ypoints[2]);
 		}
@@ -567,40 +544,31 @@ public class Wheel extends JPanel {
 	private void doStartSpin(double speed, int direction, double deceleration) {
 		// Stop any in-flight spin before starting a new one.
 		stopSpinTimer();
-		_activeSpinSpeed = speed;
-		_activeSpinDirection = direction;
-		_activeSpinDeceleration = deceleration;
-		_spinOnOff = true;
-		_spinSpeed = speed;
-		int intervalMs = 1000 / _refreshRate;
+		_model.startSpin(speed, direction, deceleration);
+		int intervalMs = 1000 / REFRESH_RATE;
 		_spinTimer = new Timer(intervalMs, e -> onSpinTick());
 		_spinTimer.setRepeats(true);
 		_spinTimer.start();
 		fireSpinStarted();
 	}
 
+	private static final int REFRESH_RATE = 100;
+
 	/**
-	 * Called on every tick of {@link #_spinTimer}. Updates the rotation
-	 * angle and decelerates. Stops the timer when the spin comes to rest.
+	 * Called on every tick of {@link #_spinTimer}. Delegates the
+	 * physics step to the model, then fires events and repaints.
 	 */
 	private void onSpinTick() {
-		if (!_spinOnOff) {
+		SpinStep step = _model.tickSpin(1.0 / REFRESH_RATE);
+		fireRotationChanged(_model.getRotationAngleDeg());
+		fireSelectionChangedMaybe();
+		if (step.shouldStop()) {
 			stopSpinTimer();
-			return;
-		}
-		double delta = _activeSpinDirection * (_activeSpinSpeed / _refreshRate);
-		setRotationAngle(getRotationAngle() + delta);
-		_activeSpinSpeed += _activeSpinDeceleration / _refreshRate;
-		if (_activeSpinSpeed <= 0) {
-			_activeSpinSpeed = 0;
-			_spinSpeed = 0;
-			stopSpinTimer();
-			_spinOnOff = false;
 			fireSpinStopped();
 		} else {
-			_spinSpeed = _activeSpinSpeed;
-			fireSpinSpeedChanged(_spinSpeed);
+			fireSpinSpeedChanged(_model.getSpinSpeedDegPerSec());
 		}
+		repaint();
 	}
 
 	/**
@@ -609,11 +577,10 @@ public class Wheel extends JPanel {
 	 */
 	public void spinStop() {
 		Runnable stop = () -> {
+			boolean wasSpinning = _model.isSpinning();
 			stopSpinTimer();
-			if (_spinOnOff) {
-				_spinOnOff = false;
-				_activeSpinSpeed = 0;
-				_spinSpeed = 0;
+			_model.stopSpin();
+			if (wasSpinning) {
 				fireSpinStopped();
 			}
 		};
@@ -658,7 +625,7 @@ public class Wheel extends JPanel {
 	}
 
 	private void fireSelectionChangedMaybe() {
-		String current = getSelectedString();
+		String current = _model.getSelectedItem();
 		if (current == null) return;
 		if (!current.equals(_lastReportedSelection)) {
 			_lastReportedSelection = current;
