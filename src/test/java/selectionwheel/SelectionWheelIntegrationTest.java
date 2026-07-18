@@ -35,10 +35,10 @@ class SelectionWheelIntegrationTest {
 	void constructor_initializesWithItems() throws Exception {
 		SelectionWheel wheel = createWheel(List.of("A", "B", "C", "D"));
 		SwingUtilities.invokeAndWait(() -> {
-			assertThat(wheel.getListOfStrings()).containsExactly("A", "B", "C", "D");
+			assertThat(wheel.getItems()).containsExactly("A", "B", "C", "D");
 			assertThat(wheel.isSpinning()).isFalse();
 			assertThat(wheel.getSpinSpeed()).isEqualTo(0.0);
-			assertThat(wheel.getSelectedString()).isEqualTo("A");
+			assertThat(wheel.getSelectedItem()).isEqualTo("A");
 		});
 	}
 
@@ -142,14 +142,14 @@ class SelectionWheelIntegrationTest {
 	}
 
 	@Test
-	void setListOfStrings_replacesItemsAndResetsSelection() throws Exception {
+	void setItems_replacesItemsAndResetsSelection() throws Exception {
 		SelectionWheel wheel = createWheel(List.of("A", "B", "C"));
 		SwingUtilities.invokeAndWait(() -> {
 			wheel.setRotationAngle(120);
-			assertThat(wheel.getSelectedString()).isEqualTo("B");
-			wheel.setListOfStrings(new ArrayList<>(List.of("X", "Y")));
-			assertThat(wheel.getListOfStrings()).containsExactly("X", "Y");
-			assertThat(wheel.getSelectedString()).isEqualTo("X");
+			assertThat(wheel.getSelectedItem()).isEqualTo("B");
+			wheel.setItems(new ArrayList<>(List.of("X", "Y")));
+			assertThat(wheel.getItems()).containsExactly("X", "Y");
+			assertThat(wheel.getSelectedItem()).isEqualTo("X");
 			assertThat(wheel.getRotationAngle()).isEqualTo(0.0);
 		});
 	}

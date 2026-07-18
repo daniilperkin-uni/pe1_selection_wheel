@@ -51,7 +51,7 @@ public final class WheelMath {
 	 * Returns the index of the section currently positioned under the tick
 	 * (i.e., between {@code 0} and {@code sectionAngle} degrees).
 	 *
-	 * <p>This is the same computation as the original {@code Wheel.getSelectedString}:
+	 * <p>This is the same computation as the original {@code Wheel.getSelectedItem}:
 	 * <pre>
 	 *   floor(numSections + (rotationAngleDeg % 360) / sectionAngle) % numSections
 	 * </pre>

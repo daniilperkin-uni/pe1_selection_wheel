@@ -94,18 +94,18 @@ public class SelectionWheel extends JPanel {
 		_wheel.setFont(font);
 	}
 
-	public ArrayList<String> getListOfStrings() {
+	public ArrayList<String> getItems() {
 		/*
-		 * Get the list of strings for the wheel.
+		 * Get the list of items for the wheel.
 		 */
-		return new ArrayList<>(_wheel.getListOfStrings());
+		return new ArrayList<>(_wheel.getItems());
 	}
 
-	public void setListOfStrings(ArrayList<String> list) {
+	public void setItems(ArrayList<String> list) {
 		/*
-		 * Set the list of strings for the wheel.
+		 * Set the list of items for the wheel.
 		 */
-		_wheel.setListOfStrings(list);
+		_wheel.setItems(list);
 	}
 
 	public double getSpinSpeed() {
@@ -158,11 +158,11 @@ public class SelectionWheel extends JPanel {
 		_wheel.addColor(color);
 	}
 
-	public String getSelectedString() {
+	public String getSelectedItem() {
 		/*
-		 * Get current string selection for the wheel.
+		 * Get current item selection for the wheel.
 		 */
-		return _wheel.getSelectedString();
+		return _wheel.getSelectedItem();
 	}
 
 	public boolean isSpinning() {

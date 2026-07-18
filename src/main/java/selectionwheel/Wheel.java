@@ -219,16 +219,16 @@ public class Wheel extends JPanel {
 		return _radius;
 	}
 
-	public List<String> getListOfStrings() {
+	public List<String> getItems() {
 		/*
-		 * Get list of strings displayed inside the sections of the wheel.
+		 * Get the list of items displayed inside the sections of the wheel.
 		 */
 		return _model.getItems();
 	}
 
-	public void setListOfStrings(List<String> list) {
+	public void setItems(List<String> list) {
 		/*
-		 * Set list of strings displayed inside the sections of the wheel.
+		 * Set the list of items displayed inside the sections of the wheel.
 		 * The initial list is set in constructor method and can be changed during runtime.
 		 */
 		_model.setItems(list);
@@ -256,7 +256,7 @@ public class Wheel extends JPanel {
 		// Guard against virtual method call during JPanel construction:
 		// JPanel's constructor calls updateUI() -> setFont() before our
 		// _model field is initialized. Skip the wheel-specific logic in
-		// that case; it will run again when setListOfStrings or another
+		// that case; it will run again when setItems or another
 		// mutator is called later.
 		if (_model == null) return;
 		_image = null;
@@ -303,7 +303,7 @@ public class Wheel extends JPanel {
 		return _model.isSpinning();
 	}
 
-	public String getSelectedString() {
+	public String getSelectedItem() {
 		/*
 		 * Get current selection.
 		 * Returns the string which is displayed in the section of the wheel
@@ -349,7 +349,7 @@ public class Wheel extends JPanel {
 		 * Calculate all the necessary parameters for the wheel and draw it
 		 * section by section.
 		 */
-		List<String> stringList = _model.getItems();
+		List<String> items = _model.getItems();
 		int noElem = _model.getNumSections();
 		double delta = _model.getSectionAngleDeg();
 		double rotationAngle = _model.getRotationAngleDeg();
@@ -365,7 +365,7 @@ public class Wheel extends JPanel {
 		int fontSize, stringWidth, maxStringWidth;
 
 		maxStringWidth = (int) (_radius - 2 * stringDistanceFromEdge);
-		fontSize = calcFontSize(g2d, stringDistanceFromEdge, maxStringWidth, stringList, noElem, delta);
+		fontSize = calcFontSize(g2d, stringDistanceFromEdge, maxStringWidth, items, noElem, delta);
 		g2d.setFont(new Font(_font.getFamily(), _font.getStyle(), fontSize));
 
 		// Adjust the parameters (for "zoom in") - if the font size is too small
@@ -377,7 +377,7 @@ public class Wheel extends JPanel {
 			img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 			g2d = (Graphics2D) img.getGraphics();
 			maxStringWidth = (int) (_radius - 2 * stringDistanceFromEdge);
-			fontSize = calcFontSize(g2d, stringDistanceFromEdge, maxStringWidth, stringList, noElem, delta);
+			fontSize = calcFontSize(g2d, stringDistanceFromEdge, maxStringWidth, items, noElem, delta);
 		}
 
 		// Calculate center point
@@ -422,8 +422,8 @@ public class Wheel extends JPanel {
 			g2d.rotate(Math.toRadians(delta / 2), _center.getX(), _center.getY());
 			g2d.setColor(Color.BLACK);
 			fontMetrics = g2d.getFontMetrics();
-			stringWidth = fontMetrics.stringWidth(stringList.get(i));
-			g2d.drawString(stringList.get(i),
+			stringWidth = fontMetrics.stringWidth(items.get(i));
+			g2d.drawString(items.get(i),
 					(int) (_center.getX() + maxStringWidth - stringWidth + stringDistanceFromEdge),
 					(int) (_center.getY() + (double) fontMetrics.getHeight() / 2
 							- fontMetrics.getMaxDescent()));
@@ -438,7 +438,7 @@ public class Wheel extends JPanel {
 	private static final int LIMIT = 100;
 
 	private int calcFontSize(Graphics g, double stringDistanceFromEdge, int maxStringWidth,
-			List<String> stringList, int noElem, double delta) {
+			List<String> items, int noElem, double delta) {
 		/*
 		 * Calculates the optimal font size for the strings inside the sections.
 		 * The strings need to be positioned next to the broader end of the section.
@@ -450,8 +450,8 @@ public class Wheel extends JPanel {
 		// Find the longest string
 		String tmpString = "";
 		for (int i = noElem - 1; i >= 0; i--) {
-			if (stringList.get(i).length() > tmpString.length())
-				tmpString = stringList.get(i);
+			if (items.get(i).length() > tmpString.length())
+				tmpString = items.get(i);
 		}
 
 		// Set it to max font size and calculate rectangle

@@ -20,7 +20,7 @@ import java.util.ArrayList;
  */
 public class MainWheel {
 
-	private final JLabel selectedMovieLabel = new JLabel("(selection)");
+	private final JLabel selectedItemLabel = new JLabel("(selection)");
 	private final JLabel rotationAngleLabel = new JLabel("(angle)");
 	private final JLabel spinSpeedLabel = new JLabel("(speed)");
 
@@ -74,7 +74,7 @@ public class MainWheel {
 		wheel.addWheelListener(new WheelListener() {
 			@Override
 			public void selectionChanged(String selectedItem) {
-				selectedMovieLabel.setText(selectedItem);
+				selectedItemLabel.setText(selectedItem);
 			}
 
 			@Override
@@ -92,12 +92,12 @@ public class MainWheel {
 				// Update the speed label one last time (it's now 0).
 				spinSpeedLabel.setText("0.0");
 				JOptionPane.showMessageDialog(mainWindow,
-						"Selection: " + wheel.getSelectedString());
+						"Selection: " + wheel.getSelectedItem());
 			}
 		});
 
 		// Initialize the labels with default values
-		selectedMovieLabel.setText(wheel.getSelectedString());
+		selectedItemLabel.setText(wheel.getSelectedItem());
 		rotationAngleLabel.setText(Double.toString(wheel.getRotationAngle()));
 		spinSpeedLabel.setText("0.0");
 
@@ -129,7 +129,7 @@ public class MainWheel {
 		JLabel angleLabel = new JLabel("Angle: ");
 		JLabel speedLabel = new JLabel("Speed: ");
 		selectionLabel.setBounds(720, 10, 100, 20);
-		selectedMovieLabel.setBounds(830, 10, 150, 20);
+		selectedItemLabel.setBounds(830, 10, 150, 20);
 		angleLabel.setBounds(720, 30, 100, 20);
 		rotationAngleLabel.setBounds(830, 30, 150, 20);
 		speedLabel.setBounds(720, 50, 100, 20);
@@ -137,7 +137,7 @@ public class MainWheel {
 		mainWindow.add(selectionLabel);
 		mainWindow.add(angleLabel);
 		mainWindow.add(speedLabel);
-		mainWindow.add(selectedMovieLabel);
+		mainWindow.add(selectedItemLabel);
 		mainWindow.add(rotationAngleLabel);
 		mainWindow.add(spinSpeedLabel);
 	}
