@@ -14,15 +14,41 @@ public class SelectionWheel extends JPanel {
 
 	Wheel _wheel;
 	Tick _tick;
+	private boolean _tickVisible = true;
 
 	@Override
 	public void setBounds(int x, int y, int width, int height) {
 		/*
 		 * Adjust the bounds of the wheel and tick based on tick width.
+		 * If the tick is hidden, the wheel gets the full width.
 		 */
 		super.setBounds(x, y, width, height);
-		_wheel.setBounds(0, 0, width - _tick.getTickWidth(), height);
-		_tick.setBounds(width - _tick.getTickWidth(), 0, _tick.getTickWidth(), height);
+		if (_tickVisible) {
+			int tickWidth = _tick.getTickWidth();
+			_wheel.setBounds(0, 0, width - tickWidth, height);
+			_tick.setBounds(width - tickWidth, 0, tickWidth, height);
+		} else {
+			_wheel.setBounds(0, 0, width, height);
+			_tick.setBounds(0, 0, 0, 0);
+		}
+	}
+
+	/**
+	 * Controls whether the tick (pointer) is visible. When hidden, the
+	 * wheel expands to fill the full bounds of this container.
+	 *
+	 * <p>Defaults to {@code true} for backward compatibility.
+	 *
+	 * @param visible {@code true} to show the tick, {@code false} to hide
+	 */
+	public void setTickVisible(boolean visible) {
+		_tickVisible = visible;
+		_tick.setVisible(visible);
+		this.setBounds(this.getX(), this.getY(), this.getWidth(), this.getHeight());
+	}
+
+	public boolean isTickVisible() {
+		return _tickVisible;
 	}
 
 	public void hasBorders(boolean borders) {

@@ -253,6 +253,12 @@ public class Wheel extends JPanel {
 		 */
 		super.setFont(font);
 		_font = font;
+		// Guard against virtual method call during JPanel construction:
+		// JPanel's constructor calls updateUI() -> setFont() before our
+		// _model field is initialized. Skip the wheel-specific logic in
+		// that case; it will run again when setListOfStrings or another
+		// mutator is called later.
+		if (_model == null) return;
 		_image = null;
 		spinStop();
 		setRotationAngle(0);
@@ -315,6 +321,9 @@ public class Wheel extends JPanel {
 		 * properly.
 		 */
 		super.paintComponent(g);
+
+		// Guard against paint during construction (before _model is set).
+		if (_model == null) return;
 
 		if (_image == null) {
 			_image = drawImage();
