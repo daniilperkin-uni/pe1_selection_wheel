@@ -1,0 +1,15 @@
+Cat
+Dog
+Rabbit
+Hamster
+Parrot
+Guinea Pig
+Goldfish
+Turtle
+Rat
+Crab
+Fish
+Frog
+Dragon
+Chinchilla
+Hedgehog
