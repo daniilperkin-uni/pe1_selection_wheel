@@ -3,9 +3,6 @@ package selectionwheel;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Polygon;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -75,7 +72,7 @@ public class SelectionWheel extends JPanel {
 		/*
 		 * Get the list of strings for the wheel.
 		 */
-		return _wheel.getListOfStrings();
+		return new ArrayList<>(_wheel.getListOfStrings());
 	}
 
 	public void setListOfStrings(ArrayList<String> list) {
@@ -118,7 +115,8 @@ public class SelectionWheel extends JPanel {
 		/*
 		 * Get color scheme of the wheel.
 		 */
-		return _wheel.getColorScheme();
+		List<Color> colors = _wheel.getColorScheme();
+		return colors == null ? null : new ArrayList<>(colors);
 	}
 
 	public void setColorScheme(ArrayList<Color> colors) {
@@ -127,7 +125,6 @@ public class SelectionWheel extends JPanel {
 		 */
 		_wheel.setColorScheme(colors);
 	}
-
 	public void addColor(Color color) {
 		/*
 		 * Add new color to the color scheme of the wheel.
@@ -225,5 +222,19 @@ public class SelectionWheel extends JPanel {
 		 * Stop spinning.
 		 */
 		_wheel.spinStop();
+	}
+
+	public void addWheelListener(WheelListener listener) {
+		/*
+		 * Register a WheelListener on the underlying wheel.
+		 */
+		_wheel.addWheelListener(listener);
+	}
+
+	public void removeWheelListener(WheelListener listener) {
+		/*
+		 * Remove a previously registered WheelListener.
+		 */
+		_wheel.removeWheelListener(listener);
 	}
 }

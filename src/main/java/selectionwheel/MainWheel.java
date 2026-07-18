@@ -1,131 +1,117 @@
 package selectionwheel;
 
 import javax.swing.*;
-import java.util.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.IOException;
+import java.util.ArrayList;
 
 /**
  * MainWheel is the main class for the SelectionWheel program.
  * It initializes a graphical user interface (GUI) that features
- * a spinning wheel with a list of movies.
+ * a spinning wheel of selectable items.
  *
- * The wheel supports displaying various movies and updates its
+ * <p>The application is fully event-driven: instead of busy-wait
+ * polling, it registers a {@link WheelListener} on the wheel and
+ * updates its info labels via callbacks delivered on the EDT.
+ *
+ * <p>The wheel supports displaying various items and updates its
  * state as it spins.
  */
 public class MainWheel {
 
-	static JLabel selectedMovieLabel = new JLabel("(selection)");
-	static JLabel rotationAngleLabel = new JLabel("(angle)");
-	static JLabel spinSpeedLabel = new JLabel("(speed)");
+	private final JLabel selectedMovieLabel = new JLabel("(selection)");
+	private final JLabel rotationAngleLabel = new JLabel("(angle)");
+	private final JLabel spinSpeedLabel = new JLabel("(speed)");
 
 	/**
-	 * The main method initializes the GUI components and handles
-	 * the spinning wheel interaction. It updates the labels to show
-	 * the selected movie, the wheel's current angle, and the spinning
-	 * speed.
+	 * The main method initializes the GUI components and registers
+	 * a WheelListener that updates the info labels and shows a
+	 * dialog whenever the wheel comes to rest.
 	 *
-	 *  Preconditions: The list of movies must be non-empty, as it is passed to the SelectionWheel.
-	 *  Postconditions: The GUI is fully initialized and displayed to the user.</li>
-	 *  The program runs without termination.
+	 * <p>Preconditions: the bundled itemlist.txt resource must be
+	 * present on the classpath and non-empty.
+	 * Postconditions: the GUI is fully initialized and displayed
+	 * to the user; the program runs until the window is closed.
+	 *
+	 * @param args unused
 	 */
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) {
+		ArrayList<String> items;
+		try {
+			items = ContentReader.importListOfItems();
+		} catch (IOException e) {
+			JOptionPane.showMessageDialog(null,
+					"Failed to load item list: " + e.getMessage(),
+					"Selection Wheel", JOptionPane.ERROR_MESSAGE);
+			System.exit(1);
+			return;
+		}
 
+		// Build and show the GUI on the EDT.
+		SwingUtilities.invokeLater(() -> new MainWheel().launch(items));
+	}
+
+	private void launch(ArrayList<String> items) {
 		// Set the dimensions for the GUI window
-		int windowWidth = 1000, windowHeigth = 1000;
+		int windowWidth = 1000, windowHeight = 1000;
 
 		// Initialize the main JFrame and set its default behavior
-		JFrame mainWindow = new JFrame();
+		JFrame mainWindow = new JFrame("Selection Wheel");
 		mainWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-
-		/*
-		*	Create and populate the homePetList of movies for the selection wheel
-		*/
-		ArrayList<String> homePetList = ContentReader.importListOfItems();
-
-		/* Initialize the SelectionWheel and configure its properties
-		*
-		 */
-		SelectionWheel wheel = new SelectionWheel(homePetList);
+		// Initialize the SelectionWheel and configure its properties
+		SelectionWheel wheel = new SelectionWheel(items);
 		wheel.hasBorders(true);
 		wheel.setBounds(10, 10, 700, 700);
 
-		//adds the wheel to the main window
 		mainWindow.add(wheel);
 
 		// Set up the labels and components for displaying wheel information in the main window
 		setupMainWindowComponents(mainWindow);
 
-		/* Configure the mainWindow's layout and visibility
-		*
-		 */
-		mainWindow.setSize(windowWidth, windowHeigth);
-		mainWindow.setLayout(null);
-		mainWindow.setVisible(true);
-
-		/* Initialize the labels with default values
-		*
-		 */
-		updateSelectedString(wheel);
-		updateRotationAngle(wheel);
-		updateSpinSpeed(wheel);
-
-		//makes the wheel to be not a circle, but umbrellashaped thing
-		//wheel.setShape(Wheel.Shape.UMBRELLA);
-
-		/* Main application loop
-		*
-		 */
-		while(true) {
-			// Wait for the wheel to start spinning
-			while(!wheel.isSpinning())
-			{
-				updateSelectedString(wheel);
-				updateRotationAngle(wheel);
-
-				Thread.sleep(10);
-
-				if(wheel.isSpinning())
-					break;
+		// Register an event-driven listener instead of busy-wait polling.
+		wheel.addWheelListener(new WheelListener() {
+			@Override
+			public void selectionChanged(String selectedItem) {
+				selectedMovieLabel.setText(selectedItem);
 			}
-			/* Update labels while the wheel is spinning
-			*
-			 */
-			while(wheel.isSpinning())
-			{
-				updateSelectedString(wheel);
-				updateRotationAngle(wheel);
-				updateSpinSpeed(wheel);
 
-				Thread.sleep(10);
-
+			@Override
+			public void rotationChanged(double angleDegrees) {
+				rotationAngleLabel.setText(Double.toString(angleDegrees));
 			}
-			// Update the speed label after the wheel stops
-			updateSpinSpeed(wheel);
 
-			// Show the selected movie in a dialog box
-			JOptionPane.showMessageDialog(mainWindow, "Selection: " + wheel.getSelectedString());
-		}
-	}
+			@Override
+			public void spinSpeedChanged(double speedDegreesPerSecond) {
+				spinSpeedLabel.setText(Double.toString(speedDegreesPerSecond));
+			}
 
-	/**
-	 * Updates the text of the selected movie label.
-	 */
-	private static void updateSelectedString(SelectionWheel wheel) {
+			@Override
+			public void spinStopped() {
+				// Update the speed label one last time (it's now 0).
+				spinSpeedLabel.setText("0.0");
+				JOptionPane.showMessageDialog(mainWindow,
+						"Selection: " + wheel.getSelectedString());
+			}
+		});
+
+		// Initialize the labels with default values
 		selectedMovieLabel.setText(wheel.getSelectedString());
-	}
-
-	/**
-	 * Updates the text of the rotation angle label.
-	 */
-	private static void updateRotationAngle(SelectionWheel wheel) {
 		rotationAngleLabel.setText(Double.toString(wheel.getRotationAngle()));
-	}
+		spinSpeedLabel.setText("0.0");
 
-	/**
-	 * Updates the text of the spin speed label.
-	 */
-	private static void updateSpinSpeed(SelectionWheel wheel) {
-		spinSpeedLabel.setText(Double.toString(wheel.getSpinSpeed()));
+		// Configure the mainWindow's layout and visibility
+		mainWindow.setSize(windowWidth, windowHeight);
+		mainWindow.setLayout(null);
+		// Stop any in-flight spin when the window is closed, so no orphan timer lingers.
+		mainWindow.addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosing(WindowEvent e) {
+				wheel.spinStop();
+			}
+		});
+		mainWindow.setVisible(true);
 	}
 
 	/**
@@ -136,10 +122,9 @@ public class MainWheel {
 	 * and spinning speed of the SelectionWheel. The components are added
 	 * to the specified JFrame.
 	 *
-	 *
 	 * @param mainWindow the JFrame to which the components are added
 	 */
-	private static void setupMainWindowComponents(JFrame mainWindow) {
+	private void setupMainWindowComponents(JFrame mainWindow) {
 		JLabel selectionLabel = new JLabel("Selection: ");
 		JLabel angleLabel = new JLabel("Angle: ");
 		JLabel speedLabel = new JLabel("Speed: ");
@@ -156,5 +141,4 @@ public class MainWheel {
 		mainWindow.add(rotationAngleLabel);
 		mainWindow.add(spinSpeedLabel);
 	}
-
 }
