@@ -64,3 +64,25 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/java,windows,netbeans
+
+### IntelliJ IDEA ###
+# Compiler output - per-user, must not be committed
+out/
+
+# Per-user IDE state - do not share
+.idea/workspace.xml
+.idea/shelf/
+.idea/usage.statistics.xml
+.idea/tasks.xml
+.idea/dictionaries/
+.idea/sonarlint/
+.idea/httpRequests/
+
+### Maven ###
+target/
+*.releaseBackup
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties

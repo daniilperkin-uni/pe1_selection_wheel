@@ -1,4 +1,4 @@
-package SelectionWheel;
+package selectionwheel;
 
 import javax.swing.*;
 import java.util.*;
@@ -158,6 +158,3 @@ public class MainWheel {
 	}
 
 }
-
-
-

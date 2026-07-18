@@ -1,4 +1,4 @@
-package SelectionWheel;
+package selectionwheel;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -13,12 +13,12 @@ import static java.lang.Thread.*;
 
 @SuppressWarnings("serial")
 public class Wheel extends JPanel {
-	
+
 	public static enum Shape {
 		CIRCLE,
 		UMBRELLA
 	}
-	
+
 	Image _image = null;
 	private boolean hasBorders = false;
 	private double _delta;
@@ -26,15 +26,15 @@ public class Wheel extends JPanel {
 	private Point2D _rotationCenter;
 	private double _rotationAngle = 0;
 	private double _zoomFactor = 1;
-	
+
 	private ArrayList<Color> _colors;
 	int _colorCounter = 0;
-	
+
 	private Shape _shape = Shape.CIRCLE;
 	private final int BORDER = 10;
 	private int _radius;
 	private Point2D _center = new Point2D.Double();
-	
+
 	ArrayList<String> _stringList;
 	private int _noElem;
 	private final int LIMIT = 100;
@@ -57,7 +57,7 @@ public class Wheel extends JPanel {
 		_image = null;
 		super.setBounds(x, y, width, height);
 	}
-	
+
 	public void hasBorders(boolean borders) {
 		/*
 		 * Borders on/off.
@@ -69,7 +69,7 @@ public class Wheel extends JPanel {
 		setRotationAngle(0);
 		this.repaint();
 	}
-	
+
 	public void setShape(Shape shape) {
 		/*
 		 * Set the shape of the wheel.
@@ -81,14 +81,14 @@ public class Wheel extends JPanel {
 		setRotationAngle(0);
 		this.repaint();
 	}
-	
+
 	public double getRotationAngle() {
 		/*
 		 * Get current rotation of the wheel.
 		 */
 		return _rotationAngle;
 	}
-	
+
 	public void setRotationAngle(double rotationAngle) {
 		/*
 		 * Set the current rotation of the wheel.
@@ -96,14 +96,14 @@ public class Wheel extends JPanel {
 		_rotationAngle = rotationAngle % 360;
 		this.repaint();
 	}
-	
+
 	public ArrayList<Color> getColorScheme() {
 		/*
 		 * Get ArrayList of colors used for sections of the wheel.
 		 */
 		return _colors;
 	}
-	
+
 	public void setColorScheme(ArrayList<Color> colors) {
 		/*
 		 * Set ArrayList of colors used for sections of the wheel.
@@ -114,7 +114,7 @@ public class Wheel extends JPanel {
 		setRotationAngle(0);
 		this.repaint();
 	}
-	
+
 	public void addColor(Color color) {
 		/*
 		 * Add a new color to the existing color scheme for the sections of the wheel.
@@ -127,7 +127,7 @@ public class Wheel extends JPanel {
 		setRotationAngle(0);
 		this.repaint();
 	}
-	
+
 	public int getRadius() {
 		/*
 		 * Get radius of the wheel.
@@ -135,14 +135,14 @@ public class Wheel extends JPanel {
 		 */
 		return _radius;
 	}
-	
+
 	public ArrayList<String> getListOfStrings() {
 		/*
 		 * Get list of strings displayed inside the sections of the wheel.
 		 */
 		return _stringList;
 	}
-	
+
 	public void setListOfStrings(ArrayList<String> list) {
 		/*
 		 * Set list of strings displayed inside the sections of the wheel.
@@ -158,7 +158,7 @@ public class Wheel extends JPanel {
 		setRotationAngle(0);
 		this.repaint();
 	}
-	
+
 	@Override
 	public Font getFont() {
 		/*
@@ -166,7 +166,7 @@ public class Wheel extends JPanel {
 		 */
 		return _font;
 	}
-	
+
 	@Override
 	public void setFont(Font font) {
 		/*
@@ -179,7 +179,7 @@ public class Wheel extends JPanel {
 		setRotationAngle(0);
 		this.repaint();
 	}
-	
+
 	public double getSpinSpeed() {
 		/*
 		 * Get current spinning speed.
@@ -187,14 +187,14 @@ public class Wheel extends JPanel {
 		 */
 		return _spinOnOff ? _spinSpeed : 0;
 	}
-	
+
 	public double getMaxSpinSpeed() {
 		/*
 		 * Get current speed limit.
 		 */
 		return _maxSpinSpeed;
 	}
-	
+
 	public void setMaxSpinSpeed(double speed) {
 		/*
 		 * Set current speed limit.
@@ -202,24 +202,24 @@ public class Wheel extends JPanel {
 		_spinOnOff = false;
 		_maxSpinSpeed = speed;
 	}
-	
+
 	public double getSpinDeceleration() {
 		return _spinDeceleration;
 	}
-	
+
 	public void setSpinDeceleration(double deceleration) {
 
 		assert (deceleration < 0) : "Parameter value for acceleration must be < 0";
 		_spinDeceleration = deceleration;
 	}
-	
+
 	public boolean isSpinning() {
 		/*
 		 * Check if the wheel is spinning.
 		 */
 		return _spinOnOff;
 	}
-	
+
 	public String getSelectedString() {
 		/*
 		 * Get current selection.
@@ -230,14 +230,14 @@ public class Wheel extends JPanel {
 		 */
 		return _stringList.get((int)Math.floor(_noElem + (_rotationAngle % 360) / _delta) % _noElem);
 	}
-	
+
 	public Wheel(ArrayList<String> listOfStrings) {
 		/*
 		 * Constructor of the class.
 		 * Sets the string arraylist, adds mouse listeners and stast TimerTask to measure the rotation speed.
 		 */
 		setListOfStrings(listOfStrings);
-		
+
 		addMouseListener(new MouseAdapter() {
 			@Override
 			public void mousePressed(MouseEvent e) {
@@ -265,7 +265,7 @@ public class Wheel extends JPanel {
 
 			}
 		});
-		
+
 		addMouseMotionListener(new MouseAdapter() {
 			@Override
 			public void mouseDragged(MouseEvent e) {
@@ -286,7 +286,7 @@ public class Wheel extends JPanel {
 				_mouseDragPosition = mousePos;
 			}
 		});
-		
+
 		// start TimerTask to measure current speed
 		TimerTask timerTask = new speedTimerTask();
 		_speedTimer = new Timer(true);
@@ -301,7 +301,7 @@ public class Wheel extends JPanel {
 		 * The image can be larger than the displaying area, so after it is drawn it needs to be placed properly.
 		 */
 		super.paintComponent(g);
-		
+
 		if(_image == null) {
 			_image = drawImage();
 			_rotationCenter = new Point2D.Double(
@@ -313,15 +313,15 @@ public class Wheel extends JPanel {
 						(int)(this.getHeight() / 2 - _center.getY())
 					);
 		}
-		
+
 		Graphics2D gPanel = (Graphics2D) g;
 		gPanel.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		gPanel.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-		
+
 		gPanel.rotate(Math.toRadians(_rotationAngle), _rotationCenter.getX(), _rotationCenter.getY());
 		gPanel.drawImage(_image, (int)_imagePosition.getX(), (int)_imagePosition.getY(), null);
 	}
-	
+
 	private BufferedImage drawImage()
 	{
 		/*
@@ -333,14 +333,14 @@ public class Wheel extends JPanel {
 
 		// Calculate radius
 		_radius = Math.min(img.getWidth(), img.getHeight()) / 2 - BORDER;
-		
+
 		double stringDistanceFromEdge = 0.05 * _radius;
 		int fontSize, stringWidth, maxStringWidth;
-		
+
 		maxStringWidth = (int)(_radius - 2 * stringDistanceFromEdge);
 		fontSize = calcFontSize(g2d, stringDistanceFromEdge, maxStringWidth);
 		g2d.setFont(new Font(_font.getFamily(), _font.getStyle(), fontSize));
-		
+
 		// Adjust the parameters (for "zoom in") - if the font size is too small
 		if(fontSize < MINFONTSIZE) {
 			_zoomFactor = (double)MINFONTSIZE / fontSize;
@@ -352,21 +352,21 @@ public class Wheel extends JPanel {
 			maxStringWidth = (int)(_radius - 2 * stringDistanceFromEdge);
 			fontSize = calcFontSize(g2d, stringDistanceFromEdge, maxStringWidth);
 		}
-		
+
 		// Calculate center point
 		_center = new Point2D.Double((double)img.getWidth() / 2, (double)img.getHeight() / 2);
-		
+
 		// Set rendering hints
 		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 		g2d.rotate(Math.toRadians(_rotationAngle),_center.getX(), _center.getY());
-		
+
 		// Draw center point
 		if(hasBorders) {
 			g2d.setColor(Color.BLACK);
 			g2d.fillArc((int)_center.getX() - (int)Math.floor(Math.max(0.01 * _radius, 1)), (int)_center.getY() - (int)Math.floor(Math.max(0.01 * _radius, 1)), (int)Math.floor(Math.max(0.01 * 2 * _radius, 2)), (int)Math.floor(Math.max(0.01 * 2 * _radius, 2)), 0, 360);
 		}
-		
+
 		// Divide circle and draw strings
 		FontMetrics fontMetrics;
 		if(_colors == null)
@@ -393,10 +393,10 @@ public class Wheel extends JPanel {
 			g2d.drawString(_stringList.get(i), (int)(_center.getX() + maxStringWidth - stringWidth + stringDistanceFromEdge), (int)(_center.getY() + (double)fontMetrics.getHeight() / 2 - fontMetrics.getMaxDescent()));
 			g2d.rotate(Math.toRadians(_delta / 2), _center.getX(), _center.getY());
 		}
-		
+
 		return img;
 	}
-	
+
 	private int calcFontSize(Graphics g, double stringDistanceFromEdge, int maxStringWidth) {
 		/*
 		 * Calculates the optimal font size for the strings inside the sections.
@@ -404,20 +404,20 @@ public class Wheel extends JPanel {
 		 * The optimal size will depend on the longest string length and maximum height of the section
 		 * in the left border of the rectangle surrounding the string.
 		 */
-		
+
 		// Find the longest string
 		String tmpString = "";
 		for(int i = _noElem - 1; i >= 0; i--) {
 			if(_stringList.get(i).length() > tmpString.length())
 				tmpString = _stringList.get(i);
 		}
-		
+
 		// Set it to max font size and calculate rectangle
 		int fontSize = MAXFONTSIZE;
 		g.setFont(new Font(_font.getFamily(), _font.getStyle(), fontSize));
 		FontMetrics fontMetrics = g.getFontMetrics();
 		Rectangle2D stringBounds = fontMetrics.getStringBounds(tmpString, g);
-		
+
 		// Adjust string height / font size
 		int maxHeight = (int)Math.floor(2 * stringDistanceFromEdge * Math.sin(Math.toRadians(_delta / 2)));
 		if(stringBounds.getHeight() > maxHeight) {
@@ -426,7 +426,7 @@ public class Wheel extends JPanel {
 			fontMetrics = g.getFontMetrics();
 			stringBounds = fontMetrics.getStringBounds(tmpString, g);
 		}
-		
+
 		// Adjust string width
 		// If the string is too narrow, increase font until it fits
 		double K = stringBounds.getWidth() / stringBounds.getHeight();
@@ -442,10 +442,10 @@ public class Wheel extends JPanel {
 			fontMetrics = g.getFontMetrics();
 			stringBounds = fontMetrics.getStringBounds(tmpString, g);
 		}
-		
+
 		return Math.min(fontSize, MAXFONTSIZE);
 	}
-	
+
 	private void fillArc(Graphics g2d) {
 		g2d.fillArc((int)_center.getX() - _radius, (int)_center.getY() - _radius, 2 * _radius, 2 * _radius, 0, (int)- Math.ceil(_delta)); // use ceil because of decimal part (would be left empty)
 		if(hasBorders) {
@@ -453,7 +453,7 @@ public class Wheel extends JPanel {
 			g2d.drawArc((int)_center.getX() - _radius, (int)_center.getY() - _radius, 2 * _radius, 2 * _radius, 0, (int)- Math.ceil(_delta));
 		}
 	}
-	
+
 	private void fillTriangle(Graphics2D g2d) {
 		/*
 		 * Method that draws section as a triangle (in case Shape=UMBRELLA was chosen)
@@ -474,7 +474,7 @@ public class Wheel extends JPanel {
 			g2d.drawLine(xpoints[1], ypoints[1], xpoints[2], ypoints[2]);
 		}
 	}
-	
+
 	private class SpinRunnable implements Runnable {
 		/*
 		 * Runnable class that handles the spinning of the wheel.
@@ -492,7 +492,7 @@ public class Wheel extends JPanel {
 	    }
 
 	    public void run()
-		{
+	    {
 	    	_spinOnOff = true;
 			int sleepTime = 1000 / _refreshRate;
 			double delta;
@@ -512,14 +512,14 @@ public class Wheel extends JPanel {
 			_spinOnOff = false;
 		}
 	}
-	
+
 	public void spinStartAsync(double speed, int direction, double deceleration) {
 		/*
 		 * Method that starts the spinning thread.
 		 * Parameters:
 		 * speed => degrees per second
 		 * direction => "< 0" = clockwise , "> 0" = counter-clockwise, "=0" = stand still
-		 * deceleration => "< 0" = degrees per second per second reducing speed, "= 0" = perpetual spin, "> 0" = throw exception
+		 * deceleration => "< 0" = degrees per second per second reducing speed, "=0" = perpetual spin, "> 0" = throw exception
 		 */
 
 		assert deceleration <= 0: "Illegal parameter value: acceleration must be < 0";
@@ -528,7 +528,7 @@ public class Wheel extends JPanel {
 		Thread t = new Thread(spinRunnable);
 		t.start();
 	}
-	
+
 	public void spinStop()
 	{
 		/*
@@ -536,7 +536,7 @@ public class Wheel extends JPanel {
 		 */
 		_spinOnOff = false;
 	}
-	
+
 	private class speedTimerTask extends TimerTask {
 		/*
 		 * TimerTask class that monitors and refreshes the _spinSpeed
@@ -560,7 +560,7 @@ public class Wheel extends JPanel {
 			}
 		}
 	}
-	
+
 	private ArrayList<Color> getDefaultColorList() {
 		/*
 		 * Returns default color list.

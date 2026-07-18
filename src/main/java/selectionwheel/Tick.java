@@ -1,4 +1,4 @@
-package SelectionWheel;
+package selectionwheel;
 
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -8,48 +8,48 @@ import javax.swing.JPanel;
 
 @SuppressWarnings("serial")
 public class Tick extends JPanel {
-	
+
 	private Polygon _polygon_orig = null;
 	private Polygon _polygon = null;
-	
+
 	private int _tickWidth = 20;
 	private int _tickHeight = 20;
-	
+
 	public int getTickWidth() {
 		/*
 		 * Get tick width.
 		 */
 		return _tickWidth;
 	}
-	
+
 	public void setTickWidth(int width) {
 		/*
 		 * Set tick width.
 		 */
 		_tickWidth = width;
 	}
-	
+
 	public int getTickHeight() {
 		/*
 		 * Get tick height.
 		 */
 		return _tickHeight;
 	}
-	
+
 	public void setTickHeight(int height) {
 		/*
 		 * Set tick height.
 		 */
 		_tickHeight = height;
 	}
-	
+
 	public Polygon getPolygon() {
 		/*
 		 * Get polygon shape of the tick.
 		 */
 		return _polygon;
 	}
-	
+
 	public void setPolygon(Polygon polygon) {
 		/*
 		 * Set polygon shape of the tick.
@@ -59,12 +59,12 @@ public class Tick extends JPanel {
 		adjustPolygon();
 		this.repaint();
 	}
-	
+
 	public Tick() {
 		super();
 		this.repaint();
 	}
-	
+
 	private void adjustPolygon()
 	{
 		/*
@@ -107,7 +107,7 @@ public class Tick extends JPanel {
 		// translate polygon to center of the panel
 		_polygon.translate(this.getWidth() / 2 - centerX, this.getHeight() / 2 - centerY);
 	}
-	
+
 	private Polygon getTriangle() {
 		/*
 		 * Get triangle polygon - default shape of the tick.
@@ -118,7 +118,7 @@ public class Tick extends JPanel {
 		polygon.addPoint(this.getWidth(), (int)(this.getHeight() / 2 + this.getWidth() * Math.tan(Math.toRadians(30))));
 		return polygon;
 	}
-	
+
 	@Override
 	public void paintComponent(Graphics g)
 	{
@@ -133,7 +133,7 @@ public class Tick extends JPanel {
 				RenderingHints.VALUE_ANTIALIAS_ON
 			);
 		g2d.addRenderingHints(rh);
-		
+
 		if(_polygon_orig == null)
 			_polygon = getTriangle();
 		else
