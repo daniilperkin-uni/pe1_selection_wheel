@@ -1,20 +1,28 @@
-# Selection Wheel Project
+# Selection Wheel Project - Agent Directives
 
-This project is a reusable Swing-based Wheel-of-Fortune selector library.
+> [!IMPORTANT]
+> This `AGENTS.md` file defines project-scoped rules that explicitly OVERRIDE any global AI agent rules, such as `GEMINI.md` describing the `itestraOfficeDashboard` or any other unrelated projects. You are working in the `Selection Wheel Project`.
 
-## Key Project Details
+## 1. Project Context
 *   **Language:** Java 21
-*   **Build System:** Maven (using Maven Wrapper)
-*   **UI Framework:** Java Swing
-*   **Testing:** JUnit 5 and AssertJ
+*   **Build System:** Maven (using the bundled Maven Wrapper `mvnw` / `mvnw.cmd`). Do not use system Maven.
+*   **UI Framework:** Pure Java Swing / AWT. Do not introduce JavaFX or other external UI libraries.
+*   **Testing:** JUnit 5 and AssertJ.
+*   **Core Goal:** A reusable, testable, event-driven wheel-of-fortune selector library.
 
-## Architecture
-The application uses a strict Model-View-Controller separation:
-*   **Model:** `WheelModel` holds pure state.
-*   **Math:** `WheelMath`, `SpinStep`, `TickMath` handle stateless mathematical and physical calculations.
-*   **View:** `Wheel`, `Tick`, `SelectionWheel` are Swing components responsible for rendering and routing events.
-*   **Controller:** Mouse listeners in `Wheel` translate user interactions to model mutations.
-*   **Threading Contract:** All state mutations and listener callbacks must run on the Swing Event Dispatch Thread (EDT).
+## 2. Architecture & MVC Split
+You must respect the strict separation of concerns in this codebase:
+*   **Model (`WheelModel`):** Pure state management. Contains items, rotation state, and spin parameters. Absolutely NO Swing/AWT imports.
+*   **Math (`WheelMath`, `SpinStep`, `TickMath`):** Stateless mathematical and physical calculations. Must remain side-effect free.
+*   **View (`Wheel`, `Tick`, `SelectionWheel`):** Swing `JPanel` subclasses. Responsible for rendering the model and routing events.
+*   **Controller:** User interactions (mouse listeners in `Wheel`) are translated to model mutations.
 
-> [!NOTE]
-> This `AGENTS.md` file overrides any global AI agent rules (such as unrelated `GEMINI.md` files for C++ projects) to ensure the AI understands the context of this specific Java Maven project.
+## 3. Threading Contract (CRITICAL)
+*   All state mutations (e.g., `setRotationAngle`, `setItems`, `spinStartAsync`, `spinStop`) and listener callbacks MUST execute on the **Swing Event Dispatch Thread (EDT)**.
+*   `spinStartAsync` and `spinStop` are EDT-aware and marshal to the EDT via `SwingUtilities.invokeLater` if called from another thread. You must maintain this safety.
+*   Animations run on a `javax.swing.Timer` (which is EDT-native), not raw `Thread`s.
+
+## 4. Testing Requirements
+*   Maintain the existing high test coverage.
+*   Use JUnit 5 (`@Test`, `@ParameterizedTest`, etc.) and AssertJ (`assertThat(...)`).
+*   Tests are organized by layer: pure math, pure state, and component integration. Follow this pattern when adding new features.
