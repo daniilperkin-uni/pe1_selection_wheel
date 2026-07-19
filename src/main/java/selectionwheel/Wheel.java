@@ -376,6 +376,7 @@ public class Wheel extends JPanel {
 			_radius = (int) (_zoomFactor * _radius);
 			img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 			g2d = (Graphics2D) img.getGraphics();
+			stringDistanceFromEdge = 0.05 * _radius;
 			maxStringWidth = (int) (_radius - 2 * stringDistanceFromEdge);
 			fontSize = calcFontSize(g2d, stringDistanceFromEdge, maxStringWidth, items, noElem, delta);
 		}
@@ -454,10 +455,6 @@ public class Wheel extends JPanel {
 				tmpString = items.get(i);
 		}
 
-		// Height constraint: the tallest a string can be inside a section
-		// (chord of the section arc at distance stringDistanceFromEdge).
-		int maxHeight = (int) Math.floor(2 * stringDistanceFromEdge * Math.sin(Math.toRadians(delta / 2)));
-
 		// Binary search for the largest font size where BOTH width and
 		// height constraints are satisfied. Replaces the original two
 		// while-loops that incremented/decremented by 1 (O(n) per
@@ -471,7 +468,15 @@ public class Wheel extends JPanel {
 			g.setFont(new Font(_font.getFamily(), _font.getStyle(), mid));
 			FontMetrics fm = g.getFontMetrics();
 			Rectangle2D bounds = fm.getStringBounds(tmpString, g);
-			if (bounds.getWidth() <= maxStringWidth && bounds.getHeight() <= maxHeight) {
+			
+			double outerEdge = maxStringWidth + stringDistanceFromEdge;
+			double innerEdge = outerEdge - bounds.getWidth();
+			double availableHeight = 0;
+			if (innerEdge >= stringDistanceFromEdge) {
+				availableHeight = 2 * innerEdge * Math.sin(Math.toRadians(delta / 2));
+			}
+
+			if (bounds.getWidth() <= maxStringWidth && bounds.getHeight() <= availableHeight) {
 				lo = mid;
 			} else {
 				hi = mid - 1;

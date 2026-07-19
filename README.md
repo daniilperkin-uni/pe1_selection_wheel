@@ -45,7 +45,7 @@ java -cp target/classes selectionwheel.MainWheel
 2. **Release** to start a decelerating spin (speed depends on drag velocity).
 3. **Click** the wheel while spinning to stop it immediately.
 4. **Press Space or Enter** (or click the **Spin** button) to start a random spin.
-5. The selected item appears in the result bar at the bottom.
+5. The selected item appears in a popup dialog and in the result bar at the bottom.
 
 ### Customizing the Wheel
 
