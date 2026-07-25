@@ -1,7 +1,7 @@
 # Selection Wheel Project - Agent Directives
 
 > [!IMPORTANT]
-> This `AGENTS.md` file defines project-scoped rules that explicitly OVERRIDE any global AI agent rules, such as `GEMINI.md` describing the `itestraOfficeDashboard` or any other unrelated projects. You are working in the `Selection Wheel Project`.
+> This `AGENTS.md` file defines project-scoped rules that explicitly OVERRIDE any global AI agent rules, such as `GEMINI.md` describing other unrelated projects. You are working in the `Selection Wheel Project`.
 
 ## 1. Project Context
 *   **Language:** Java 21

@@ -165,7 +165,7 @@ The project uses JUnit 5 + AssertJ. Tests are organized by layer:
 ## Project Structure
 
 ```
-24W-projects/
+pe1_selection_wheel/
 ├── pom.xml                          # Maven build (JDK 21, JUnit 5, AssertJ)
 ├── mvnw / mvnw.cmd                  # Maven Wrapper (no global Maven install needed)
 ├── .mvn/wrapper/                    # Wrapper config
