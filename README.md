@@ -154,8 +154,8 @@ The project uses JUnit 5 + AssertJ. Tests are organized by layer:
 | `TickMathTest`                  | 11    | Triangle geometry, polygon scaling/centering, idempotency (regression for cumulative-scaling bug) |
 | `WheelModelTest`                | 26    | Construction, setItems, rotation, selection, spin lifecycle, full spin integration |
 | `SelectionWheelIntegrationTest` | 7     | Component-level: bounds, tick visibility, listener delivery, spin lifecycle |
-| `ContentReaderTest`             | 1     | Resource loading and validation              |
-| **Total**                       | **82**|                                              |
+| `ContentReaderTest`             | 9     | Resource loading, missing/blank resource, empty/oversized lists, content verification, trimming |
+| **Total**                       | **90**|                                              |
 
 ```bash
 ./mvnw.cmd test           # run all tests

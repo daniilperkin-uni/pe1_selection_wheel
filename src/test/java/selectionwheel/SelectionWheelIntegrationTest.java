@@ -6,6 +6,8 @@ import javax.swing.SwingUtilities;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -48,9 +50,9 @@ class SelectionWheelIntegrationTest {
 		SwingUtilities.invokeAndWait(() -> {
 			wheel.setBounds(0, 0, 200, 200);
 			int tickWidth = (int) wheel.getTickWidth();
-			assertThat(wheel._wheel.getBounds())
+			assertThat(wheel.getWheel().getBounds())
 					.isEqualTo(new Rectangle(0, 0, 200 - tickWidth, 200));
-			assertThat(wheel._tick.getBounds())
+			assertThat(wheel.getTick().getBounds())
 					.isEqualTo(new Rectangle(200 - tickWidth, 0, tickWidth, 200));
 		});
 	}
@@ -61,9 +63,9 @@ class SelectionWheelIntegrationTest {
 		SwingUtilities.invokeAndWait(() -> {
 			wheel.setTickVisible(false);
 			wheel.setBounds(0, 0, 200, 200);
-			assertThat(wheel._wheel.getBounds())
+			assertThat(wheel.getWheel().getBounds())
 					.isEqualTo(new Rectangle(0, 0, 200, 200));
-			assertThat(wheel._tick.getBounds())
+			assertThat(wheel.getTick().getBounds())
 					.isEqualTo(new Rectangle(0, 0, 0, 0));
 			assertThat(wheel.isTickVisible()).isFalse();
 		});
@@ -75,10 +77,10 @@ class SelectionWheelIntegrationTest {
 		SwingUtilities.invokeAndWait(() -> {
 			wheel.setBounds(0, 0, 200, 200);
 			wheel.setTickVisible(false);
-			assertThat(wheel._wheel.getWidth()).isEqualTo(200);
+			assertThat(wheel.getWheel().getWidth()).isEqualTo(200);
 			wheel.setTickVisible(true);
 			int tickWidth = (int) wheel.getTickWidth();
-			assertThat(wheel._wheel.getWidth()).isEqualTo(200 - tickWidth);
+			assertThat(wheel.getWheel().getWidth()).isEqualTo(200 - tickWidth);
 			assertThat(wheel.isTickVisible()).isTrue();
 		});
 	}
@@ -116,11 +118,18 @@ class SelectionWheelIntegrationTest {
 		SelectionWheel wheel = createWheel(List.of("A", "B"));
 		AtomicInteger startCount = new AtomicInteger(0);
 		AtomicInteger stopCount = new AtomicInteger(0);
+		// Replace the previous Thread.sleep(50) drain with a CountDownLatch
+		// that is decremented by the spinStopped callback. The test then
+		// awaits the latch with a timeout instead of sleeping blindly.
+		CountDownLatch stopLatch = new CountDownLatch(1);
 		wheel.addWheelListener(new WheelListener() {
 			@Override
 			public void spinStarted() { startCount.incrementAndGet(); }
 			@Override
-			public void spinStopped() { stopCount.incrementAndGet(); }
+			public void spinStopped() {
+				stopCount.incrementAndGet();
+				stopLatch.countDown();
+			}
 		});
 
 		SwingUtilities.invokeAndWait(() -> {
@@ -134,11 +143,11 @@ class SelectionWheelIntegrationTest {
 			wheel.spinStop();
 			assertThat(wheel.isSpinning()).isFalse();
 		});
-		// Give the EDT a moment to drain any pending stop callbacks.
-		Thread.sleep(50);
-		SwingUtilities.invokeAndWait(() -> {
-			assertThat(stopCount.get()).isGreaterThanOrEqualTo(1);
-		});
+		// Wait for the spinStopped callback to fire (delivered on the EDT).
+		assertThat(stopLatch.await(2, TimeUnit.SECONDS))
+				.as("spinStopped should have fired within the timeout")
+				.isTrue();
+		assertThat(stopCount.get()).isGreaterThanOrEqualTo(1);
 	}
 
 	@Test

@@ -88,13 +88,13 @@ public final class WheelModel {
 		return WheelMath.sectionAngleDeg(numSections);
 	}
 
-	/** @return the current rotation angle in degrees, in {@code (-360, 360)} */
+	/** @return the current rotation angle in degrees, in {@code [-360, 360)} */
 	public double getRotationAngleDeg() {
 		return rotationAngleDeg;
 	}
 
 	/**
-	 * Sets the rotation angle, normalizing it to {@code (-360, 360)}.
+	 * Sets the rotation angle, normalizing it to {@code [-360, 360)}.
 	 *
 	 * @param angleDeg any angle, positive or negative
 	 */

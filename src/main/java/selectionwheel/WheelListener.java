@@ -45,7 +45,8 @@ public interface WheelListener {
      * Called whenever the wheel's rotation angle is updated.
      *
      * @param angleDegrees current rotation angle in degrees,
-     *                     normalized to {@code [0, 360)}
+     *                     normalized to {@code [-360, 360)} by
+     *                     {@link WheelMath#normalizeAngleDeg}
      */
     default void rotationChanged(double angleDegrees) {
     }

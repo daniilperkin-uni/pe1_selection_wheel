@@ -12,9 +12,19 @@ import javax.swing.JPanel;
 @SuppressWarnings("serial")
 public class SelectionWheel extends JPanel {
 
-	Wheel _wheel;
-	Tick _tick;
-	private boolean _tickVisible = true;
+	Wheel wheel;
+	Tick tick;
+	private boolean tickVisible = true;
+
+	/** Package-private accessor used by tests instead of direct field access. */
+	Wheel getWheel() {
+		return wheel;
+	}
+
+	/** Package-private accessor used by tests instead of direct field access. */
+	Tick getTick() {
+		return tick;
+	}
 
 	@Override
 	public void setBounds(int x, int y, int width, int height) {
@@ -23,13 +33,13 @@ public class SelectionWheel extends JPanel {
 		 * If the tick is hidden, the wheel gets the full width.
 		 */
 		super.setBounds(x, y, width, height);
-		if (_tickVisible) {
-			int tickWidth = _tick.getTickWidth();
-			_wheel.setBounds(0, 0, width - tickWidth, height);
-			_tick.setBounds(width - tickWidth, 0, tickWidth, height);
+		if (tickVisible) {
+			int tickWidth = tick.getTickWidth();
+			wheel.setBounds(0, 0, width - tickWidth, height);
+			tick.setBounds(width - tickWidth, 0, tickWidth, height);
 		} else {
-			_wheel.setBounds(0, 0, width, height);
-			_tick.setBounds(0, 0, 0, 0);
+			wheel.setBounds(0, 0, width, height);
+			tick.setBounds(0, 0, 0, 0);
 		}
 	}
 
@@ -42,48 +52,48 @@ public class SelectionWheel extends JPanel {
 	 * @param visible {@code true} to show the tick, {@code false} to hide
 	 */
 	public void setTickVisible(boolean visible) {
-		_tickVisible = visible;
-		_tick.setVisible(visible);
+		tickVisible = visible;
+		tick.setVisible(visible);
 		this.setBounds(this.getX(), this.getY(), this.getWidth(), this.getHeight());
 	}
 
 	public boolean isTickVisible() {
-		return _tickVisible;
+		return tickVisible;
 	}
 
 	public void hasBorders(boolean borders) {
 		/*
 		 * Check if the wheel borders are on.
 		 */
-		_wheel.hasBorders(borders);
+		wheel.hasBorders(borders);
 	}
 
 	public int getRadius() {
 		/*
 		 * Get radius of the wheel.
 		 */
-		return _wheel.getRadius();
+		return wheel.getRadius();
 	}
 
 	public double getRotationAngle() {
 		/*
 		 * Get current rotation angle of the wheel.
 		 */
-		return _wheel.getRotationAngle();
+		return wheel.getRotationAngle();
 	}
 
 	public void setRotationAngle(double rotationAngle) {
 		/*
 		 * Set current rotation angle of the wheel.
 		 */
-		_wheel.setRotationAngle(rotationAngle);
+		wheel.setRotationAngle(rotationAngle);
 	}
 
 	public Font getWheelFont() {
 		/*
 		 * Get current font of the wheel.
 		 */
-		return _wheel.getFont();
+		return wheel.getFont();
 	}
 
 	public void setWheelFont(Font font) {
@@ -91,57 +101,57 @@ public class SelectionWheel extends JPanel {
 		 * Set current font of the wheel.
 		 */
 		super.setFont(font);
-		_wheel.setFont(font);
+		wheel.setFont(font);
 	}
 
 	public ArrayList<String> getItems() {
 		/*
 		 * Get the list of items for the wheel.
 		 */
-		return new ArrayList<>(_wheel.getItems());
+		return new ArrayList<>(wheel.getItems());
 	}
 
 	public void setItems(ArrayList<String> list) {
 		/*
 		 * Set the list of items for the wheel.
 		 */
-		_wheel.setItems(list);
+		wheel.setItems(list);
 	}
 
 	public double getSpinSpeed() {
 		/*
 		 * Get current spin speed of the wheel.
 		 */
-		return _wheel.getSpinSpeed();
+		return wheel.getSpinSpeed();
 	}
 
 	public double getMaxSpinSpeed() {
 		/*
 		 * Get current spin speed limit of the wheel.
 		 */
-		return _wheel.getMaxSpinSpeed();
+		return wheel.getMaxSpinSpeed();
 	}
 
 	public void setMaxSpinSpeed(double speed) {
 		/*
 		 * Set current spin speed limit of the wheel.
 		 */
-		_wheel.setMaxSpinSpeed(speed);
+		wheel.setMaxSpinSpeed(speed);
 	}
 
 	public double getSpinDeceleration() {
-		return _wheel.getSpinDeceleration();
+		return wheel.getSpinDeceleration();
 	}
 
 	public void setSpinDeceleration(double deceleration) {
-		_wheel.setSpinDeceleration(deceleration);
+		wheel.setSpinDeceleration(deceleration);
 	}
 
 	public ArrayList<Color> getColorScheme() {
 		/*
 		 * Get color scheme of the wheel.
 		 */
-		List<Color> colors = _wheel.getColorScheme();
+		List<Color> colors = wheel.getColorScheme();
 		return colors == null ? null : new ArrayList<>(colors);
 	}
 
@@ -149,48 +159,48 @@ public class SelectionWheel extends JPanel {
 		/*
 		 * Set color scheme of the wheel.
 		 */
-		_wheel.setColorScheme(colors);
+		wheel.setColorScheme(colors);
 	}
 	public void addColor(Color color) {
 		/*
 		 * Add new color to the color scheme of the wheel.
 		 */
-		_wheel.addColor(color);
+		wheel.addColor(color);
 	}
 
 	public String getSelectedItem() {
 		/*
 		 * Get current item selection for the wheel.
 		 */
-		return _wheel.getSelectedItem();
+		return wheel.getSelectedItem();
 	}
 
 	public boolean isSpinning() {
 		/*
 		 * Check if wheel is spinning.
 		 */
-		return _wheel.isSpinning();
+		return wheel.isSpinning();
 	}
 
 	public void setShape(Wheel.Shape shape) {
 		/*
 		 * Set shape of the wheel.
 		 */
-		_wheel.setShape(shape);
+		wheel.setShape(shape);
 	}
 
 	public double getTickWidth() {
 		/*
 		 * Get tick width.
 		 */
-		return _tick.getTickWidth();
+		return tick.getTickWidth();
 	}
 
 	public void setTickWidth(int width) {
 		/*
 		 * Set tick width. Resets the bounds of both tick and wheel.
 		 */
-		_tick.setTickWidth(width);
+		tick.setTickWidth(width);
 		this.setBounds(this.getX(), this.getY(), this.getWidth(), this.getHeight());
 	}
 
@@ -198,41 +208,41 @@ public class SelectionWheel extends JPanel {
 		/*
 		 * Get tick height.
 		 */
-		return _tick.getTickHeight();
+		return tick.getTickHeight();
 	}
 
 	public void setTickHeight(int height) {
 		/*
 		 * Set tick height.
 		 */
-		_tick.setTickHeight(height);
+		tick.setTickHeight(height);
 	}
 
 	public Polygon getTickPolygon() {
 		/*
 		 * Get tick polygon.
 		 */
-		return _tick.getPolygon();
+		return tick.getPolygon();
 	}
 
 	public void setTickPolygon(Polygon polygon) {
 		/*
 		 * Set tick polygon.
 		 */
-		_tick.setPolygon(polygon);
+		tick.setPolygon(polygon);
 	}
 
 	public SelectionWheel(ArrayList<String> listOfStrings) {
 		/*
 		 * Constructor - initializes tick and wheel.
 		 */
-		_wheel = new Wheel(listOfStrings);
-		_wheel.setLayout(null);
-		_tick = new Tick();
-		_tick.setLayout(null);
+		wheel = new Wheel(listOfStrings);
+		wheel.setLayout(null);
+		tick = new Tick();
+		tick.setLayout(null);
 		this.setLayout(null);
-		this.add(_wheel);
-		this.add(_tick);
+		this.add(wheel);
+		this.add(tick);
 	}
 
 	public void spinStartAsync(double speed, int direction, double deceleration){
@@ -240,27 +250,27 @@ public class SelectionWheel extends JPanel {
 		 * Start async wheel spin.
 		 */
 
-		_wheel.spinStartAsync(speed, direction, deceleration);
+		wheel.spinStartAsync(speed, direction, deceleration);
 	}
 
 	public void spinStop() {
 		/*
 		 * Stop spinning.
 		 */
-		_wheel.spinStop();
+		wheel.spinStop();
 	}
 
 	public void addWheelListener(WheelListener listener) {
 		/*
 		 * Register a WheelListener on the underlying wheel.
 		 */
-		_wheel.addWheelListener(listener);
+		wheel.addWheelListener(listener);
 	}
 
 	public void removeWheelListener(WheelListener listener) {
 		/*
 		 * Remove a previously registered WheelListener.
 		 */
-		_wheel.removeWheelListener(listener);
+		wheel.removeWheelListener(listener);
 	}
 }

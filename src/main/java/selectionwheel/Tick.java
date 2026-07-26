@@ -21,39 +21,39 @@ import javax.swing.JPanel;
 public class Tick extends JPanel {
 
 	/** Original polygon supplied by the user via {@link #setPolygon}. Never mutated. */
-	private Polygon _polygon_orig = null;
-	/** Current polygon to render, either the default triangle or an adjusted copy of {@link #_polygon_orig}. */
-	private Polygon _polygon = null;
+	private Polygon polygonOrig = null;
+	/** Current polygon to render, either the default triangle or an adjusted copy of {@link #polygonOrig}. */
+	private Polygon polygon = null;
 
-	private int _tickWidth = 20;
-	private int _tickHeight = 20;
+	private int tickWidth = 20;
+	private int tickHeight = 20;
 
 	public int getTickWidth() {
 		/*
 		 * Get tick width.
 		 */
-		return _tickWidth;
+		return tickWidth;
 	}
 
 	public void setTickWidth(int width) {
 		/*
 		 * Set tick width.
 		 */
-		_tickWidth = width;
+		tickWidth = width;
 	}
 
 	public int getTickHeight() {
 		/*
 		 * Get tick height.
 		 */
-		return _tickHeight;
+		return tickHeight;
 	}
 
 	public void setTickHeight(int height) {
 		/*
 		 * Set tick height.
 		 */
-		_tickHeight = height;
+		tickHeight = height;
 	}
 
 	public Polygon getPolygon() {
@@ -61,7 +61,7 @@ public class Tick extends JPanel {
 		 * Get the polygon shape of the tick as last rendered. May be null
 		 * if {@link #paintComponent} has not yet been called.
 		 */
-		return _polygon;
+		return polygon;
 	}
 
 	public void setPolygon(Polygon polygon) {
@@ -70,9 +70,9 @@ public class Tick extends JPanel {
 		 * by reference but never mutated; on each repaint a fresh, scaled
 		 * and centered copy is produced via {@link TickMath#adjustPolygon}.
 		 */
-		_polygon_orig = polygon;
+		polygonOrig = polygon;
 		// Force recompute on next paint.
-		_polygon = null;
+		this.polygon = null;
 		this.repaint();
 	}
 
@@ -103,13 +103,13 @@ public class Tick extends JPanel {
 				RenderingHints.VALUE_ANTIALIAS_ON);
 		g2d.addRenderingHints(rh);
 
-		if (_polygon_orig == null) {
-			_polygon = getTriangle();
+		if (polygonOrig == null) {
+			polygon = getTriangle();
 		} else {
 			// TickMath.adjustPolygon returns a fresh polygon - never mutates
-			// _polygon_orig, so repeated repaints are idempotent.
-			_polygon = TickMath.adjustPolygon(_polygon_orig, getWidth(), getHeight());
+			// polygonOrig, so repeated repaints are idempotent.
+			polygon = TickMath.adjustPolygon(polygonOrig, getWidth(), getHeight());
 		}
-		g2d.fillPolygon(_polygon);
+		g2d.fillPolygon(polygon);
 	}
 }

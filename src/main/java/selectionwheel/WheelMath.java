@@ -41,7 +41,7 @@ public final class WheelMath {
 	 * This matches the original {@code Wheel.setRotationAngle} behavior.
 	 *
 	 * @param angleDeg any angle, positive or negative
-	 * @return the equivalent angle in {@code (-360, 360)}
+	 * @return the equivalent angle in {@code [-360, 360)}
 	 */
 	public static double normalizeAngleDeg(double angleDeg) {
 		return angleDeg % 360;
