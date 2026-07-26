@@ -17,4 +17,6 @@ jobs:
           distribution: temurin
           java-version: '21'
       - name: Run tests
-        run: ./mvnw clean test
+        run: |
+          chmod +x mvnw
+          ./mvnw clean test
