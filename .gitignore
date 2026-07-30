@@ -70,13 +70,7 @@ $RECYCLE.BIN/
 out/
 
 # Per-user IDE state - do not share
-.idea/workspace.xml
-.idea/shelf/
-.idea/usage.statistics.xml
-.idea/tasks.xml
-.idea/dictionaries/
-.idea/sonarlint/
-.idea/httpRequests/
+.idea/
 
 ### Maven ###
 target/
