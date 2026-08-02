@@ -42,6 +42,10 @@ public class MainWheel {
 	private SelectionWheel wheel;
 	private final Random random = new Random();
 
+	/** Random-spin speed range, in degrees per second: {@code [MIN_SPIN_SPEED, MAX_SPIN_SPEED]}. */
+	private static final double MIN_SPIN_SPEED = 180;
+	private static final double MAX_SPIN_SPEED = 360;
+
 	/**
 	 * The main method initializes the GUI components and registers
 	 * a WheelListener that updates the info labels and the inline
@@ -208,7 +212,7 @@ public class MainWheel {
 	 */
 	private void triggerRandomSpin() {
 		if (wheel == null || wheel.isSpinning()) return;
-		double speed = 180 + random.nextDouble() * 180;
+		double speed = MIN_SPIN_SPEED + random.nextDouble() * (MAX_SPIN_SPEED - MIN_SPIN_SPEED);
 		int direction = random.nextBoolean() ? 1 : -1;
 		wheel.spinStartAsync(speed, direction, wheel.getSpinDeceleration());
 	}

@@ -33,6 +33,15 @@ java -cp target/classes selectionwheel.MainWheel
 ./mvnw test                 # macOS / Linux
 ```
 
+> **Headless Linux:** the integration tests instantiate Swing components
+> (`SelectionWheelIntegrationTest`), which need a display. On a headless
+> Linux box (CI, server, WSL without an X server) wrap the build in
+> `xvfb-run` to provide a virtual framebuffer:
+>
+> ```bash
+> xvfb-run -a mvn test
+> ```
+
 ### Package
 
 ```bash

@@ -123,6 +123,12 @@ public class Wheel extends JPanel {
 				 * vector 2 between current position of mouse and center of circle
 				 * ("k" is direction coefficient)
 				 */
+				// Guard against drag before the first paint: rotationCenter and
+				// mouseDragPosition are only populated in paintComponent /
+				// mousePressed respectively. Ignore drags until both are set.
+				if (rotationCenter == null || mouseDragPosition == null) {
+					return;
+				}
 				Point2D mousePos = new Point2D.Double(e.getX(), e.getY());
 				double delta = WheelMath.dragDeltaDeg(mouseDragPosition, mousePos, rotationCenter);
 				if (delta != 0) {
@@ -436,7 +442,8 @@ public class Wheel extends JPanel {
 
 	private static final int MAXFONTSIZE = 80;
 	private static final int MINFONTSIZE = 10;
-	private static final int LIMIT = 100;
+	/** Spin animation refresh rate in frames per second. */
+	private static final int REFRESH_RATE = 100;
 
 	private int calcFontSize(Graphics g, double stringDistanceFromEdge, int maxStringWidth,
 			List<String> items, int noElem, double delta) {
@@ -559,8 +566,6 @@ public class Wheel extends JPanel {
 		spinTimer.start();
 		fireSpinStarted();
 	}
-
-	private static final int REFRESH_RATE = 100;
 
 	/**
 	 * Called on every tick of {@link #spinTimer}. Delegates the
