@@ -56,12 +56,13 @@ java -cp target/classes selectionwheel.MainWheel
 2. **Release** to start a decelerating spin (speed depends on drag velocity).
 3. **Click** the wheel while spinning to stop it immediately.
 4. **Press Space or Enter** (or click the **Spin** button) to start a random spin.
-5. The selected item appears in a popup dialog and in the result bar at the bottom.
+5. The selected item appears in the result bar at the bottom (no modal popup).
 
 ### Customizing the Wheel
 
 The item list is loaded from `src/main/resources/itemlist.txt` — one item per line.
-Edit this file to change the selectable items (max 100 items, non-empty).
+Edit this file to change the selectable items (max 100 items, non-empty),
+or use the **Load list...** button to load a UTF-8 text file at runtime.
 
 ## Architecture
 
@@ -94,7 +95,7 @@ Edit this file to change the selectable items (max 100 items, non-empty).
 |------------------|----------------------------------|-----------------------------------------|
 | **Model**        | `WheelModel`                     | Pure state: items, rotation, spin params. No Swing. |
 | **Math (pure)**  | `WheelMath`, `SpinStep`, `TickMath` | Stateless functions: selection index, drag delta, spin physics, polygon geometry. |
-| **View**         | `Wheel`, `Tick`, `SelectionWheel` | Swing `JPanel` subclasses. Render the model, route mouse/keyboard events. |
+| **View**         | `Wheel`, `WheelRenderer`, `Tick`, `SelectionWheel` | Swing `JPanel` subclasses. Render the model, route mouse/keyboard events. |
 | **Controller**   | `Wheel` (mouse listeners)        | Translates user input into model mutations + fires `WheelListener` events. |
 | **Entry point**  | `MainWheel`                      | Creates the `JFrame`, wires listeners to labels, keyboard shortcuts. |
 
@@ -112,8 +113,8 @@ Edit this file to change the selectable items (max 100 items, non-empty).
 ### Adding a New Shape
 
 1. Add a new enum constant to `Wheel.Shape` (e.g., `HEXAGON`).
-2. Implement the drawing method in `Wheel` (e.g., `fillHexagon(Graphics2D, double)`).
-3. Add a case in `Wheel.drawImage()` where the shape is selected.
+2. Implement the drawing method in `WheelRenderer` (e.g., `fillHexagon(Graphics2D, double)`).
+3. Add a branch in `WheelRenderer` where the section fill is chosen by shape.
 
 ### Adding a New Data Source
 
@@ -166,7 +167,10 @@ The project uses JUnit 5 + AssertJ. Tests are organized by layer:
 | `WheelModelTest`                | 26    | Construction, setItems, rotation, selection, spin lifecycle, full spin integration |
 | `SelectionWheelIntegrationTest` | 7     | Component-level: bounds, tick visibility, listener delivery, spin lifecycle |
 | `ContentReaderTest`             | 9     | Resource loading, missing/blank resource, empty/oversized lists, content verification, trimming |
-| **Total**                       | **90**|                                              |
+| `ContentReaderFileTest`         | 5     | Loading items from a user-chosen text file |
+| `MainWheelRandomTest`           | 4     | Injected random spin source |
+| `WheelRendererTest`             | 1     | Offscreen rendering smoke test |
+| **Total**                       | **100**|                                              |
 
 ```bash
 ./mvnw.cmd test           # run all tests
@@ -187,7 +191,8 @@ pe1_selection_wheel/
     │   ├── java/selectionwheel/
     │   │   ├── MainWheel.java       # Entry point: JFrame, layout, keyboard
     │   │   ├── SelectionWheel.java  # Composite: Wheel + Tick
-    │   │   ├── Wheel.java           # View: renders the wheel, routes events
+    │   │   ├── Wheel.java           # View: routes events, delegates painting
+    │   │   ├── WheelRenderer.java   # Paints the wheel image (sections, text)
     │   │   ├── WheelModel.java      # Model: pure state (items, rotation, spin)
     │   │   ├── WheelMath.java       # Pure math: selection index, drag delta
     │   │   ├── SpinStep.java        # Immutable record: one tick of spin physics
@@ -204,5 +209,8 @@ pe1_selection_wheel/
             ├── TickMathTest.java
             ├── WheelModelTest.java
             ├── SelectionWheelIntegrationTest.java
-            └── ContentReaderTest.java
+            ├── ContentReaderTest.java
+            ├── ContentReaderFileTest.java
+            ├── MainWheelRandomTest.java
+            └── WheelRendererTest.java
 ```

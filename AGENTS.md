@@ -14,7 +14,8 @@
 You must respect the strict separation of concerns in this codebase:
 *   **Model (`WheelModel`):** Pure state management. Contains items, rotation state, and spin parameters. Absolutely NO Swing/AWT imports.
 *   **Math (`WheelMath`, `SpinStep`, `TickMath`):** Stateless mathematical and physical calculations. Must remain side-effect free.
-*   **View (`Wheel`, `Tick`, `SelectionWheel`):** Swing `JPanel` subclasses. Responsible for rendering the model and routing events.
+*   **View (`Wheel`, `Tick`, `SelectionWheel`):** Swing `JPanel` subclasses. Responsible for routing events and delegating painting.
+*   **Rendering (`WheelRenderer`):** Package-private, Swing-free Graphics2D painter used by `Wheel`; testable headless on a `BufferedImage`.
 *   **Controller:** User interactions (mouse listeners in `Wheel`) are translated to model mutations.
 
 ## 3. Threading Contract (CRITICAL)
@@ -29,6 +30,6 @@ You must respect the strict separation of concerns in this codebase:
 
 ## 5. Coding Conventions
 *   **Java naming convention (MANDATORY):** all fields, locals, and parameters use standard Java `camelCase`. Do **NOT** use the C++/.NET `_underscore` prefix for fields (e.g. write `model`, not `_model`; `spinTimer`, not `_spinTimer`). Constants use `UPPER_SNAKE_CASE` (`MAXFONTSIZE`, `ITEM_LIMIT`).
-*   **Item limit constraint:** the wheel supports at most `ContentReader.ITEM_LIMIT = 100` items (this constant mirrors `Wheel.LIMIT` and `WheelModel.ITEM_LIMIT`). Lists that are null, empty, or larger than 100 must raise `IllegalArgumentException`. The bundled resource `itemlist.txt` is the canonical example.
+*   **Item limit constraint:** the wheel supports at most `ContentReader.ITEM_LIMIT = 100` items (this constant mirrors `WheelModel.ITEM_LIMIT`). Lists that are null, empty, or larger than 100 must raise `IllegalArgumentException`. The bundled resource `itemlist.txt` is the canonical example.
 *   **Angle normalization:** rotation angles are normalized to `[-360, 360)` via `WheelMath.normalizeAngleDeg` (Java `%` preserves the dividend's sign, so negative angles are reported as negative). Any Javadoc describing the rotation range must say `[-360, 360)`, not `[0, 360)`.
 *   **No `Thread.sleep` in tests:** prefer a `java.util.concurrent.CountDownLatch` awaited with a timeout when synchronizing on an EDT-delivered callback.
