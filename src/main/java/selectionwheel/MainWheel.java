@@ -11,7 +11,9 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.Random;
+import java.util.random.RandomGenerator;
 
 /**
  * MainWheel is the main class for the SelectionWheel program.
@@ -40,7 +42,22 @@ public class MainWheel {
 	private final JButton spinButton = new JButton("Spin");
 
 	private SelectionWheel wheel;
-	private final Random random = new Random();
+	private final RandomGenerator random;
+
+	/** Creates the app with a fresh {@link Random} as the spin source. */
+	public MainWheel() {
+		this(new Random());
+	}
+
+	/**
+	 * Creates the app with an injected random source, so spins can be
+	 * made deterministic in tests.
+	 *
+	 * @param random source for spin speed and direction; not null
+	 */
+	MainWheel(RandomGenerator random) {
+		this.random = Objects.requireNonNull(random, "random");
+	}
 
 	/** Random-spin speed range, in degrees per second: {@code [MIN_SPIN_SPEED, MAX_SPIN_SPEED]}. */
 	private static final double MIN_SPIN_SPEED = 180;
@@ -212,8 +229,16 @@ public class MainWheel {
 	 */
 	private void triggerRandomSpin() {
 		if (wheel == null || wheel.isSpinning()) return;
-		double speed = MIN_SPIN_SPEED + random.nextDouble() * (MAX_SPIN_SPEED - MIN_SPIN_SPEED);
-		int direction = random.nextBoolean() ? 1 : -1;
-		wheel.spinStartAsync(speed, direction, wheel.getSpinDeceleration());
+		wheel.spinStartAsync(nextSpinSpeed(), nextSpinDirection(), wheel.getSpinDeceleration());
+	}
+
+	/** @return a random speed in {@code [MIN_SPIN_SPEED, MAX_SPIN_SPEED)} deg/s */
+	double nextSpinSpeed() {
+		return MIN_SPIN_SPEED + random.nextDouble() * (MAX_SPIN_SPEED - MIN_SPIN_SPEED);
+	}
+
+	/** @return {@code 1} or {@code -1} */
+	int nextSpinDirection() {
+		return random.nextBoolean() ? 1 : -1;
 	}
 }
