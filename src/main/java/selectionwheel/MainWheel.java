@@ -219,8 +219,33 @@ public class MainWheel {
 		panel.add(resultLabel, BorderLayout.CENTER);
 		spinButton.setPreferredSize(new Dimension(100, 30));
 		spinButton.addActionListener(e -> triggerRandomSpin());
-		panel.add(spinButton, BorderLayout.EAST);
+		JButton loadButton = new JButton("Load list...");
+		loadButton.setToolTipText("Load items from a text file (one item per line)");
+		loadButton.addActionListener(e -> chooseItemFile(panel));
+		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+		buttons.add(loadButton);
+		buttons.add(spinButton);
+		panel.add(buttons, BorderLayout.EAST);
 		return panel;
+	}
+
+	/**
+	 * Lets the user pick a text file and replaces the wheel's items with
+	 * its lines. Invalid files are reported and leave the wheel unchanged.
+	 */
+	private void chooseItemFile(Component parent) {
+		if (wheel == null || wheel.isSpinning()) return;
+		JFileChooser chooser = new JFileChooser();
+		chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Text files", "txt"));
+		if (chooser.showOpenDialog(parent) != JFileChooser.APPROVE_OPTION) return;
+		try {
+			wheel.setItems(ContentReader.importFromFile(chooser.getSelectedFile().toPath()));
+			selectedItemLabel.setText(wheel.getSelectedItem());
+			resultLabel.setText("Loaded " + chooser.getSelectedFile().getName());
+		} catch (IOException | IllegalArgumentException ex) {
+			JOptionPane.showMessageDialog(parent, "Could not load list: " + ex.getMessage(),
+					"Selection Wheel", JOptionPane.ERROR_MESSAGE);
+		}
 	}
 
 	/**

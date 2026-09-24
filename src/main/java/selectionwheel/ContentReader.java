@@ -2,6 +2,8 @@ package selectionwheel;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -65,6 +67,25 @@ public final class ContentReader {
             if (in == null) {
                 throw new IOException("Resource not found on classpath: " + resource);
             }
+            return parse(in);
+        }
+    }
+
+    /**
+     * Loads an item list from a user-chosen UTF-8 text file, one item per
+     * non-blank line, with the same validation as the bundled resource.
+     *
+     * @param file path of the text file; not null
+     * @return a validated, non-empty list of items
+     * @throws IOException              if the file is missing or unreadable
+     * @throws IllegalArgumentException if the list is empty or exceeds
+     *                                  {@value #ITEM_LIMIT} items
+     */
+    public static ArrayList<String> importFromFile(Path file) throws IOException {
+        if (file == null) {
+            throw new IllegalArgumentException("file must not be null");
+        }
+        try (InputStream in = Files.newInputStream(file)) {
             return parse(in);
         }
     }
