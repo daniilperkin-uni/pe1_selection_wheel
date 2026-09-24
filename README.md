@@ -1,5 +1,7 @@
 # Selection Wheel
 
+[![CI](https://github.com/daniilperkin-uni/pe1_selection_wheel/actions/workflows/ci.yml/badge.svg)](https://github.com/daniilperkin-uni/pe1_selection_wheel/actions/workflows/ci.yml)
+
 A reusable Swing-based wheel-of-fortune selector library for teaching purposes.
 Originally developed as a PE1 WS24/25 exercise project; refactored into a
 testable, well-architected Java library with Maven build, full TDD coverage,

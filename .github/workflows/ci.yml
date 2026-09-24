@@ -19,7 +19,7 @@ jobs:
           cache: maven
       - name: Install xvfb for headless Swing tests
         run: sudo apt-get update && sudo apt-get install -y xvfb
-      - name: Run tests
+      - name: Build, test and coverage report
         run: |
           chmod +x mvnw
-          xvfb-run -a ./mvnw clean test
+          xvfb-run -a ./mvnw -B verify
