@@ -107,6 +107,9 @@ or use the **Load list...** button to load a UTF-8 text file at runtime.
   `SwingUtilities.invokeLater` if called from another thread.
 - `WheelListener` callbacks are always delivered on the EDT.
 - Spin animation runs on a `javax.swing.Timer` (EDT-native), not a raw `Thread`.
+- A spin ends on its own deceleration, on `spinStop`, or when the `Wheel`
+  component is removed from its container (`removeNotify`) - a detached
+  wheel never keeps its timer running.
 
 ## Extending the Wheel
 
@@ -165,12 +168,12 @@ The project uses JUnit 5 + AssertJ. Tests are organized by layer:
 | `SpinStepTest`                  | 10    | Spin physics: forward/reverse, deceleration, perpetual, argument validation |
 | `TickMathTest`                  | 11    | Triangle geometry, polygon scaling/centering, idempotency (regression for cumulative-scaling bug) |
 | `WheelModelTest`                | 26    | Construction, setItems, rotation, selection, spin lifecycle, full spin integration |
-| `SelectionWheelIntegrationTest` | 7     | Component-level: bounds, tick visibility, listener delivery, spin lifecycle |
+| `SelectionWheelIntegrationTest` | 8     | Component-level: bounds, tick visibility, listener delivery, spin lifecycle, detach stops the spin |
 | `ContentReaderTest`             | 9     | Resource loading, missing/blank resource, empty/oversized lists, content verification, trimming |
 | `ContentReaderFileTest`         | 5     | Loading items from a user-chosen text file |
 | `MainWheelRandomTest`           | 4     | Injected random spin source |
 | `WheelRendererTest`             | 1     | Offscreen rendering smoke test |
-| **Total**                       | **100**|                                              |
+| **Total**                       | **101**|                                              |
 
 ```bash
 ./mvnw.cmd test           # run all tests
