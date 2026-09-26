@@ -67,15 +67,19 @@ public final class TickMath {
 		}
 
 		// Translate so the polygon's centroid sits at the panel center.
-		int centerX = 0, centerY = 0;
+		// The centroid is computed in floating point: with integer division
+		// a fractional centroid was truncated before the translation, which
+		// left the tick up to a whole pixel off-center. The polygon points
+		// stay ints, so a residual sub-pixel offset is unavoidable.
+		double centroidX = 0, centroidY = 0;
 		for (int i = 0; i < n; i++) {
-			centerX += xs[i];
-			centerY += ys[i];
+			centroidX += xs[i];
+			centroidY += ys[i];
 		}
-		centerX /= n;
-		centerY /= n;
-		int dx = panelWidth / 2 - centerX;
-		int dy = panelHeight / 2 - centerY;
+		centroidX /= n;
+		centroidY /= n;
+		int dx = (int) Math.round(panelWidth / 2.0 - centroidX);
+		int dy = (int) Math.round(panelHeight / 2.0 - centroidY);
 		for (int i = 0; i < n; i++) {
 			xs[i] += dx;
 			ys[i] += dy;

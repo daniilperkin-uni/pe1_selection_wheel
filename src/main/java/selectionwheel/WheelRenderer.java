@@ -52,6 +52,9 @@ final class WheelRenderer {
 
 		// Adjust the parameters (for "zoom in") - if the font size is too small
 		if (fontSize < MINFONTSIZE) {
+			// Release the first graphics context before the image that owns
+			// it is replaced; the second one is disposed before returning.
+			g2d.dispose();
 			zoomFactor = (double) MINFONTSIZE / fontSize;
 			width += (int) 2 * ((zoomFactor * radius) - radius);
 			height += (int) 2 * ((zoomFactor * radius) - radius);
@@ -111,6 +114,8 @@ final class WheelRenderer {
 			g2d.rotate(Math.toRadians(delta / 2), center.getX(), center.getY());
 		}
 
+		// Release the graphics context; the image itself stays usable.
+		g2d.dispose();
 		return img;
 	}
 

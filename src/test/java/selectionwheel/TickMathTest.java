@@ -93,21 +93,20 @@ class TickMathTest {
 	// ----- adjustPolygon: centering -----
 
 	@Test
-	void adjustPolygon_centersPolygonAtPanelCenter() {
-		// NOTE: the original Tick.adjustPolygon (faithfully preserved here)
-		// computes the polygon centroid using integer division
-		// (centerY /= n), which introduces a small rounding error. For the
-		// input (0,0),(100,0),(50,100) scaled to a 200x200 panel, the
-		// centroid Y lands at 100.667 instead of exactly 100. This test
-		// asserts the actual (rounded) behavior; a future fix would
-		// compute the centroid in floating point.
+	void adjustPolygon_centersPolygonWithinHalfAPixelOfPanelCenter() {
+		// The centroid is now computed in floating point and the
+		// translation is rounded to the nearest pixel, instead of
+		// truncating a fractional centroid. The polygon points stay ints,
+		// so an exact centre is only reached when the offset divides
+		// evenly; the residual error is bounded by half a pixel per axis.
+		// Before the fix the integer division (centerY /= n) truncated
+		// 66.667 to 66 and pushed the centroid Y to 100.667.
 		Polygon source = new Polygon(new int[]{0, 100, 50}, new int[]{0, 0, 100}, 3);
 		Polygon scaled = TickMath.adjustPolygon(source, 200, 200);
 		double cx = (scaled.xpoints[0] + scaled.xpoints[1] + scaled.xpoints[2]) / 3.0;
 		double cy = (scaled.ypoints[0] + scaled.ypoints[1] + scaled.ypoints[2]) / 3.0;
-		assertThat(cx).isEqualTo(100.0, within(1e-9));
-		// Integer-division rounding in centroid computation -> ~100.667
-		assertThat(cy).isEqualTo(100.0 + 2.0 / 3.0, within(1e-9));
+		assertThat(cx).isEqualTo(100.0, within(0.5));
+		assertThat(cy).isEqualTo(100.0, within(0.5));
 	}
 
 	// ----- adjustPolygon: argument validation -----
