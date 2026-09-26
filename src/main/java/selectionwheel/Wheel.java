@@ -52,7 +52,6 @@ public class Wheel extends JPanel {
 	private double zoomFactor = 1;
 
 	private List<Color> colors;
-	int colorCounter = 0;
 
 	private Shape shape = Shape.CIRCLE;
 	private int radius;
@@ -362,7 +361,6 @@ public class Wheel extends JPanel {
 		radius = r.radius;
 		center = r.center;
 		zoomFactor = r.zoomFactor;
-		colorCounter = model.getNumSections();
 		return img;
 	}
 
@@ -451,6 +449,21 @@ public class Wheel extends JPanel {
 			spinTimer.stop();
 			spinTimer = null;
 		}
+	}
+
+	/**
+	 * Stops an in-flight spin when the component is removed from its
+	 * container. Without this, a detached wheel kept its EDT timer
+	 * ticking and repainting an offscreen component until the spin
+	 * ended on its own.
+	 */
+	@Override
+	public void removeNotify() {
+		stopSpinTimer();
+		if (model != null) {
+			model.stopSpin();
+		}
+		super.removeNotify();
 	}
 
 	// ----- listener registration -----

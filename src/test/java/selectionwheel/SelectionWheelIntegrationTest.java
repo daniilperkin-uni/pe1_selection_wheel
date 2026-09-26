@@ -151,6 +151,24 @@ class SelectionWheelIntegrationTest {
 	}
 
 	@Test
+	void removeNotify_stopsAnInFlightSpin() throws Exception {
+		SelectionWheel wheel = createWheel(List.of("A", "B"));
+		SwingUtilities.invokeAndWait(() -> {
+			wheel.spinStartAsync(360, 1, -20);
+			assertThat(wheel.isSpinning()).isTrue();
+		});
+
+		// Removing the component must stop its EDT timer; without the
+		// override a detached wheel kept ticking and repainting until the
+		// spin ended on its own. removeNotify() is invoked directly here
+		// because a component in a never-displayed hierarchy does not
+		// receive the callback from the toolkit.
+		SwingUtilities.invokeAndWait(() -> wheel.getWheel().removeNotify());
+
+		assertThat(wheel.isSpinning()).isFalse();
+	}
+
+	@Test
 	void setItems_replacesItemsAndResetsSelection() throws Exception {
 		SelectionWheel wheel = createWheel(List.of("A", "B", "C"));
 		SwingUtilities.invokeAndWait(() -> {
