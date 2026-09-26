@@ -140,7 +140,6 @@ public class MainWheel {
 				spinSpeedLabel.setText("0.0");
 				spinButton.setEnabled(true);
 				resultLabel.setText("Selection: " + wheel.getSelectedItem());
-				JOptionPane.showMessageDialog(mainWindow, "You got: " + wheel.getSelectedItem(), "Result", JOptionPane.INFORMATION_MESSAGE);
 			}
 		});
 
