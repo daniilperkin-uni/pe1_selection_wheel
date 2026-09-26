@@ -22,7 +22,11 @@ import java.util.List;
  */
 public final class WheelModel {
 
-	/** Maximum number of items the wheel can display. Matches {@code Wheel.LIMIT}. */
+	/**
+	 * Maximum number of items the wheel can display. This is the single
+	 * source of truth for the limit; {@link ContentReader#ITEM_LIMIT}
+	 * derives its value from this constant.
+	 */
 	public static final int ITEM_LIMIT = 100;
 
 	private List<String> items;

@@ -19,14 +19,14 @@ import java.util.List;
  * <ul>
  *   <li>The list must be non-empty (otherwise the wheel has no sections).</li>
  *   <li>The list size must not exceed {@value #ITEM_LIMIT}
- *       (matches {@code Wheel.LIMIT}).</li>
+ *       (mirrors {@link WheelModel#ITEM_LIMIT}).</li>
  * </ul>
  * Violations raise an {@link IllegalArgumentException}.
  */
 public final class ContentReader {
 
-    /** Maximum number of items supported by the wheel. Must match {@code Wheel.LIMIT}. */
-    public static final int ITEM_LIMIT = 100;
+    /** Maximum number of items supported by the wheel; mirrors {@link WheelModel#ITEM_LIMIT}. */
+    public static final int ITEM_LIMIT = WheelModel.ITEM_LIMIT;
 
     /** Name of the bundled resource loaded by {@link #importListOfItems()}. */
     public static final String DEFAULT_RESOURCE = "itemlist.txt";
