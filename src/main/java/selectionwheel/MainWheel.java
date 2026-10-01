@@ -79,7 +79,7 @@ public class MainWheel {
 		ArrayList<String> items;
 		try {
 			items = ContentReader.importListOfItems();
-		} catch (IOException e) {
+		} catch (IOException | IllegalArgumentException e) {
 			JOptionPane.showMessageDialog(null,
 					"Failed to load item list: " + e.getMessage(),
 					"Selection Wheel", JOptionPane.ERROR_MESSAGE);

@@ -3,6 +3,7 @@ package selectionwheel;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.SwingUtilities;
@@ -81,5 +82,22 @@ class WheelPaintTest {
 		assertThat(differingPixels(images[0], images[1]))
 				.as("rotating the wheel must change the painted image")
 				.isPositive();
+	}
+
+	@Test
+	void emptyColorScheme_fallsBackToTheDefaultPalette() throws Exception {
+		final BufferedImage[] image = new BufferedImage[1];
+
+		SwingUtilities.invokeAndWait(() -> {
+			Wheel wheel = new Wheel(List.of("A", "B"));
+			wheel.setBounds(0, 0, 200, 200);
+			paint(wheel); // warm the image cache
+			wheel.setColorScheme(new ArrayList<>());
+			image[0] = paint(wheel); // used to throw ArithmeticException
+		});
+
+		assertThat(image[0].getRGB(100, 100) >>> 24)
+				.as("the wheel must still be painted with the default palette")
+				.isNotZero();
 	}
 }

@@ -349,7 +349,7 @@ public class Wheel extends JPanel {
 	}
 
 	private BufferedImage drawImage() {
-		if (colors == null)
+		if (colors == null || colors.isEmpty())
 			colors = getDefaultColorList();
 		WheelRenderer r = new WheelRenderer();
 		r.font = font;
