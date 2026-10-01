@@ -10,6 +10,12 @@ import java.util.List;
  * Extracted from {@link Wheel}; pure rendering, no Swing state. Layout
  * results of the last render (radius, center, zoomFactor) are exposed
  * so the component can position the image and hit-test clicks.
+ *
+ * <p>The image is rotation-independent: the model's rotation is applied
+ * by {@link Wheel#paintComponent} when the cached image is drawn. Baking
+ * the angle into the image as well rotated the wheel twice whenever the
+ * cache was invalidated (for example by a window resize) while the wheel
+ * was rotated, leaving the pointer out of sync with the selection.
  */
 final class WheelRenderer {
 
@@ -34,7 +40,6 @@ final class WheelRenderer {
 		List<String> items = model.getItems();
 		int noElem = model.getNumSections();
 		double delta = model.getSectionAngleDeg();
-		double rotationAngle = model.getRotationAngleDeg();
 
 		int width = w, height = h;
 		BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
@@ -69,10 +74,11 @@ final class WheelRenderer {
 		// Calculate center point
 		center = new Point2D.Double((double) img.getWidth() / 2, (double) img.getHeight() / 2);
 
-		// Set rendering hints
+		// Set rendering hints. The model's rotation is deliberately NOT
+		// baked in here: Wheel.paintComponent applies it when the cached
+		// image is drawn, which keeps the image valid across rotations.
 		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-		g2d.rotate(Math.toRadians(rotationAngle), center.getX(), center.getY());
 
 		// Draw center point
 		if (hasBorders) {
