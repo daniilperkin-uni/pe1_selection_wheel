@@ -8,6 +8,7 @@
 *   **Build System:** Maven (using the bundled Maven Wrapper `mvnw` / `mvnw.cmd`). Do not use system Maven.
 *   **UI Framework:** Pure Java Swing / AWT. Do not introduce JavaFX or other external UI libraries.
 *   **Testing:** JUnit 5 and AssertJ.
+*   **Build & test command:** `./mvnw.cmd -B verify` (Windows) / `./mvnw -B verify`. CI runs the same command under `xvfb-run -a` on Temurin 21 — the Swing tests need a display (`java.awt.headless=false`), so headless Linux requires xvfb.
 *   **Core Goal:** A reusable, testable, event-driven wheel-of-fortune selector library.
 
 ## 2. Architecture & MVC Split
@@ -15,7 +16,7 @@ You must respect the strict separation of concerns in this codebase:
 *   **Model (`WheelModel`):** Pure state management. Contains items, rotation state, and spin parameters. Absolutely NO Swing/AWT imports.
 *   **Math (`WheelMath`, `SpinStep`, `TickMath`):** Stateless mathematical and physical calculations. Must remain side-effect free.
 *   **View (`Wheel`, `Tick`, `SelectionWheel`):** Swing `JPanel` subclasses. Responsible for routing events and delegating painting.
-*   **Rendering (`WheelRenderer`):** Package-private, Swing-free Graphics2D painter used by `Wheel`; testable headless on a `BufferedImage`.
+*   **Rendering (`WheelRenderer`):** Package-private, Swing-free Graphics2D painter used by `Wheel`; testable headless on a `BufferedImage`. Its output must stay rotation-independent: `Wheel.paintComponent` applies the model's rotation at paint time (baking it into the image as well rotated the wheel twice whenever the cached image was invalidated by a resize).
 *   **Controller:** User interactions (mouse listeners in `Wheel`) are translated to model mutations.
 
 ## 3. Threading Contract (CRITICAL)
@@ -27,9 +28,12 @@ You must respect the strict separation of concerns in this codebase:
 *   Maintain the existing high test coverage.
 *   Use JUnit 5 (`@Test`, `@ParameterizedTest`, etc.) and AssertJ (`assertThat(...)`).
 *   Tests are organized by layer: pure math, pure state, and component integration. Follow this pattern when adding new features.
+*   Keep the `@{argLine}` prefix in the surefire `argLine` (`pom.xml`) — JaCoCo injects its agent through that placeholder; removing it silently disables coverage.
+*   `verify` writes the coverage report to `target/site/jacoco` and CI uploads it as an artifact; there is no coverage threshold gate yet.
 
 ## 5. Coding Conventions
 *   **Java naming convention (MANDATORY):** all fields, locals, and parameters use standard Java `camelCase`. Do **NOT** use the C++/.NET `_underscore` prefix for fields (e.g. write `model`, not `_model`; `spinTimer`, not `_spinTimer`). Constants use `UPPER_SNAKE_CASE` (`MAXFONTSIZE`, `ITEM_LIMIT`).
 *   **Item limit constraint:** the wheel supports at most `ContentReader.ITEM_LIMIT = 100` items (assigned from `WheelModel.ITEM_LIMIT`, the single source of truth). Lists that are null, empty, or larger than 100 must raise `IllegalArgumentException`. The bundled resource `itemlist.txt` is the canonical example.
 *   **Angle normalization:** rotation angles are normalized to `[-360, 360)` via `WheelMath.normalizeAngleDeg` (Java `%` preserves the dividend's sign, so negative angles are reported as negative). Any Javadoc describing the rotation range must say `[-360, 360)`, not `[0, 360)`.
 *   **No `Thread.sleep` in tests:** prefer a `java.util.concurrent.CountDownLatch` awaited with a timeout when synchronizing on an EDT-delivered callback.
+*   **Item list resource:** `itemlist.txt` is read from the classpath, so edits under `src/main/resources` only take effect after a rebuild; the runtime alternative is the "Load list..." button.

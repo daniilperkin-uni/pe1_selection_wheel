@@ -206,14 +206,14 @@ public class SelectionWheel extends JPanel {
 
 	public double getTickHeight() {
 		/*
-		 * Get tick height.
+		 * Get tick height (informational; see Tick).
 		 */
 		return tick.getTickHeight();
 	}
 
 	public void setTickHeight(int height) {
 		/*
-		 * Set tick height.
+		 * Set tick height (currently without visual effect; see Tick).
 		 */
 		tick.setTickHeight(height);
 	}

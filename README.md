@@ -4,8 +4,9 @@
 
 A reusable Swing-based wheel-of-fortune selector library for teaching purposes.
 Originally developed as a PE1 WS24/25 exercise project; refactored into a
-testable, well-architected Java library with Maven build, full TDD coverage,
-and an event-driven EDT-safe API.
+testable, well-architected Java library with a Maven build, 101 tests (the pure
+model and math layers at 97-100 % instruction coverage, the Swing layer being
+the remaining gap), and an event-driven EDT-safe API.
 
 <img src="wheel.png" alt="Selection Wheel screenshot" width="70%">
 
@@ -41,7 +42,7 @@ java -cp target/classes selectionwheel.MainWheel
 > `xvfb-run` to provide a virtual framebuffer:
 >
 > ```bash
-> xvfb-run -a mvn test
+> xvfb-run -a ./mvnw test
 > ```
 
 ### Package
@@ -61,8 +62,9 @@ java -cp target/classes selectionwheel.MainWheel
 ### Customizing the Wheel
 
 The item list is loaded from `src/main/resources/itemlist.txt` — one item per line.
-Edit this file to change the selectable items (max 100 items, non-empty),
-or use the **Load list...** button to load a UTF-8 text file at runtime.
+Edit this file to change the selectable items (max 100 items, non-empty) and
+rebuild: the file is read from the classpath. Alternatively use the
+**Load list...** button to load a UTF-8 text file at runtime.
 
 ## Architecture
 
@@ -95,7 +97,8 @@ or use the **Load list...** button to load a UTF-8 text file at runtime.
 |------------------|----------------------------------|-----------------------------------------|
 | **Model**        | `WheelModel`                     | Pure state: items, rotation, spin params. No Swing. |
 | **Math (pure)**  | `WheelMath`, `SpinStep`, `TickMath` | Stateless functions: selection index, drag delta, spin physics, polygon geometry. |
-| **View**         | `Wheel`, `WheelRenderer`, `Tick`, `SelectionWheel` | Swing `JPanel` subclasses. Render the model, route mouse/keyboard events. |
+| **View**         | `Wheel`, `Tick`, `SelectionWheel` | Swing `JPanel` subclasses. Render the model, route mouse/keyboard events. |
+| **Rendering**    | `WheelRenderer`                  | Package-private painter: rasterizes the wheel into a `BufferedImage` (rotation-independent; the view applies the rotation when painting). |
 | **Controller**   | `Wheel` (mouse listeners)        | Translates user input into model mutations + fires `WheelListener` events. |
 | **Entry point**  | `MainWheel`                      | Creates the `JFrame`, wires listeners to labels, keyboard shortcuts. |
 
@@ -142,6 +145,7 @@ ArrayList<String> items = MyContentReader.loadItems();
 // Create a wheel with custom items
 SelectionWheel wheel = new SelectionWheel(items);
 wheel.hasBorders(true);
+wheel.setShape(Wheel.Shape.CIRCLE);  // or Wheel.Shape.UMBRELLA
 wheel.setMaxSpinSpeed(720);          // degrees per second
 wheel.setSpinDeceleration(-50);      // degrees per second^2
 wheel.setTickVisible(true);
@@ -173,7 +177,8 @@ The project uses JUnit 5 + AssertJ. Tests are organized by layer:
 | `ContentReaderFileTest`         | 5     | Loading items from a user-chosen text file |
 | `MainWheelRandomTest`           | 4     | Injected random spin source |
 | `WheelRendererTest`             | 1     | Offscreen rendering smoke test |
-| **Total**                       | **101**|                                              |
+| `WheelPaintTest`                | 3     | Paint-level: cache invalidation must not change the rendered rotation, rotation is applied while painting, empty palette falls back to the defaults |
+| **Total**                       | **104**|                                              |
 
 ```bash
 ./mvnw.cmd test           # run all tests
@@ -215,5 +220,6 @@ pe1_selection_wheel/
             ├── ContentReaderTest.java
             ├── ContentReaderFileTest.java
             ├── MainWheelRandomTest.java
-            └── WheelRendererTest.java
+            ├── WheelRendererTest.java
+            └── WheelPaintTest.java
 ```

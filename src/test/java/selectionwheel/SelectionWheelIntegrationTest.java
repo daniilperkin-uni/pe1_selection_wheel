@@ -21,8 +21,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * delivery, and spin lifecycle. All assertions run on the EDT via
  * {@link SwingUtilities#invokeAndWait} to match the threading contract.
  *
- * <p>Unlike AssertJ-Swing fixture tests, this does not require a
- * display: it constructs components but never packs or shows a window.
+ * <p>The tests construct components but never pack or show a window.
+ * They do need a display all the same: the surefire argLine forces
+ * {@code java.awt.headless=false}, so a headless Linux runner must wrap
+ * the build in xvfb (see the CI workflow).
  */
 class SelectionWheelIntegrationTest {
 

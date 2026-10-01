@@ -15,7 +15,7 @@ import java.util.List;
  * Each non-empty line of the file becomes one item. Blank lines are skipped
  * so the file can use trailing newlines without affecting the result.
  *
- * <p>Validation mirrors the invariants enforced by {@link Wheel}:
+ * <p>Validation mirrors the invariants enforced by {@link WheelModel}:
  * <ul>
  *   <li>The list must be non-empty (otherwise the wheel has no sections).</li>
  *   <li>The list size must not exceed {@value #ITEM_LIMIT}
