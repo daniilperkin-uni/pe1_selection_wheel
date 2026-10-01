@@ -4,7 +4,7 @@
 
 A reusable Swing-based wheel-of-fortune selector library for teaching purposes.
 Originally developed as a PE1 WS24/25 exercise project; refactored into a
-testable, well-architected Java library with a Maven build, 104 tests (the pure
+testable, well-architected Java library with a Maven build, 106 tests (the pure
 model and math layers at 97-100 % instruction coverage, the Swing layer being
 the remaining gap), and an event-driven EDT-safe API.
 
@@ -179,7 +179,8 @@ The project uses JUnit 5 + AssertJ. Tests are organized by layer:
 | `MainWheelRandomTest`           | 4     | Injected random spin source |
 | `WheelRendererTest`             | 1     | Offscreen rendering smoke test |
 | `WheelPaintTest`                | 3     | Paint-level: cache invalidation must not change the rendered rotation, rotation is applied while painting, empty palette falls back to the defaults |
-| **Total**                       | **104**|                                              |
+| `MainWheelInfoPanelTest`        | 2     | Info sidebar width is independent of the selected item's text length |
+| **Total**                       | **106**|                                              |
 
 ```bash
 ./mvnw.cmd test           # run all tests
@@ -222,5 +223,6 @@ pe1_selection_wheel/
             ├── ContentReaderFileTest.java
             ├── MainWheelRandomTest.java
             ├── WheelRendererTest.java
-            └── WheelPaintTest.java
+            ├── WheelPaintTest.java
+            └── MainWheelInfoPanelTest.java
 ```

@@ -11,6 +11,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 import java.util.random.RandomGenerator;
@@ -105,7 +106,7 @@ public class MainWheel {
 		mainWindow.add(wheel, BorderLayout.CENTER);
 
 		// Info panel on the right (replaces hardcoded x/y labels)
-		JPanel infoPanel = createInfoPanel();
+		JPanel infoPanel = createInfoPanel(items);
 		mainWindow.add(infoPanel, BorderLayout.EAST);
 
 		// Control bar at the bottom (replaces the modal JOptionPane)
@@ -180,8 +181,11 @@ public class MainWheel {
 	/**
 	 * Creates the info panel with labels showing selection, angle, and speed.
 	 * Uses GridBagLayout for proper vertical stacking and label alignment.
+	 * Package-private so tests can build the panel without showing a window.
+	 *
+	 * @param items current item list; sizes the value column
 	 */
-	private JPanel createInfoPanel() {
+	JPanel createInfoPanel(List<String> items) {
 		JPanel panel = new JPanel(new GridBagLayout());
 		panel.setBorder(BorderFactory.createTitledBorder("Info"));
 		GridBagConstraints gbc = new GridBagConstraints();
@@ -204,7 +208,29 @@ public class MainWheel {
 		gbc.weighty = 1.0;
 		gbc.gridx = 0; gbc.gridy = 3; panel.add(Box.createGlue(), gbc);
 
+		fixValueColumnWidth(items);
 		return panel;
+	}
+
+	/**
+	 * Pins the value column to a fixed width: the widest item name of the
+	 * current list, or "-359.9" for the numeric labels. Without this, every
+	 * selection change resized the sidebar, re-laid out the frame and made
+	 * the wheel jump whenever the newly selected item's name had a
+	 * different length.
+	 *
+	 * @param items the item list whose widest name sets the column width
+	 */
+	private void fixValueColumnWidth(List<String> items) {
+		FontMetrics metrics = selectedItemLabel.getFontMetrics(selectedItemLabel.getFont());
+		int width = metrics.stringWidth("-359.9");
+		for (String item : items) {
+			width = Math.max(width, metrics.stringWidth(item));
+		}
+		Dimension size = new Dimension(width + 6, selectedItemLabel.getPreferredSize().height);
+		selectedItemLabel.setPreferredSize(size);
+		rotationAngleLabel.setPreferredSize(size);
+		spinSpeedLabel.setPreferredSize(size);
 	}
 
 	/**
@@ -238,7 +264,9 @@ public class MainWheel {
 		chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Text files", "txt"));
 		if (chooser.showOpenDialog(parent) != JFileChooser.APPROVE_OPTION) return;
 		try {
-			wheel.setItems(ContentReader.importFromFile(chooser.getSelectedFile().toPath()));
+			ArrayList<String> loaded = ContentReader.importFromFile(chooser.getSelectedFile().toPath());
+			wheel.setItems(loaded);
+			fixValueColumnWidth(loaded);
 			selectedItemLabel.setText(wheel.getSelectedItem());
 			resultLabel.setText("Loaded " + chooser.getSelectedFile().getName());
 		} catch (IOException | IllegalArgumentException ex) {
