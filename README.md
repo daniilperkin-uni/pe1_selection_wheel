@@ -49,6 +49,7 @@ java -cp target/classes selectionwheel.MainWheel
 
 ```bash
 ./mvnw.cmd package          # produces target/selection-wheel-1.0.0-SNAPSHOT.jar
+java -jar target/selection-wheel-1.0.0-SNAPSHOT.jar   # launches the app
 ```
 
 ## How to Use
