@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Rasterizes a wheel (sections, borders, labels) into a BufferedImage.
  * Extracted from {@link Wheel}; pure rendering, no Swing state. Layout
- * results of the last render (radius, center, zoomFactor) are exposed
+ * results of the last render (radius, center) are exposed
  * so the component can position the image and hit-test clicks.
  *
  * <p>The image is rotation-independent: the model's rotation is applied
@@ -30,7 +30,6 @@ final class WheelRenderer {
 
 	int radius;
 	Point2D center = new Point2D.Double();
-	double zoomFactor = 1;
 
 	BufferedImage render(WheelModel model, int w, int h) {
 		/*
@@ -60,7 +59,7 @@ final class WheelRenderer {
 			// Release the first graphics context before the image that owns
 			// it is replaced; the second one is disposed before returning.
 			g2d.dispose();
-			zoomFactor = (double) MINFONTSIZE / fontSize;
+			double zoomFactor = (double) MINFONTSIZE / fontSize;
 			width += (int) 2 * ((zoomFactor * radius) - radius);
 			height += (int) 2 * ((zoomFactor * radius) - radius);
 			radius = (int) (zoomFactor * radius);

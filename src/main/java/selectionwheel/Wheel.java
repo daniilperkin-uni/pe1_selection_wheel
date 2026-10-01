@@ -49,7 +49,6 @@ public class Wheel extends JPanel {
 	private boolean hasBorders = false;
 	private Point2D imagePosition;
 	private Point2D rotationCenter;
-	private double zoomFactor = 1;
 
 	private List<Color> colors;
 
@@ -187,8 +186,9 @@ public class Wheel extends JPanel {
 	public List<Color> getColorScheme() {
 		/*
 		 * Get List of colors used for sections of the wheel.
+		 * Returns a copy so callers cannot mutate the wheel's palette.
 		 */
-		return colors;
+		return colors == null ? null : new ArrayList<>(colors);
 	}
 
 	public void setColorScheme(List<Color> colors) {
@@ -356,11 +356,9 @@ public class Wheel extends JPanel {
 		r.colors = colors;
 		r.shape = shape;
 		r.hasBorders = hasBorders;
-		r.zoomFactor = zoomFactor;
 		BufferedImage img = r.render(model, getWidth(), getHeight());
 		radius = r.radius;
 		center = r.center;
-		zoomFactor = r.zoomFactor;
 		return img;
 	}
 

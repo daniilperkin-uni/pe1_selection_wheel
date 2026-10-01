@@ -97,6 +97,7 @@ public final class WheelMath {
 	 * @param timeEndMs          {@link System#currentTimeMillis()} at release
 	 * @param maxSpeedDegPerSec  upper bound on the magnitude of the result
 	 * @return signed speed in degrees per second, or {@code 0} for a no-op
+	 * @throws IllegalArgumentException if {@code maxSpeedDegPerSec < 0}
 	 */
 	public static double computeInitialSpeedDegPerSec(
 			double angleStartDeg, double angleEndDeg,
@@ -111,8 +112,7 @@ public final class WheelMath {
 			return 0;
 		}
 		int sign = (int) Math.signum(raw);
-		double magnitude = Math.min(Math.abs(raw), maxSpeedDegPerSec);
-		return sign * magnitude;
+		return sign * clampSpeed(Math.abs(raw), maxSpeedDegPerSec);
 	}
 
 	/**
