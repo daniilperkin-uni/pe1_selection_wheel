@@ -8,6 +8,8 @@ testable, well-architected Java library with a Maven build, 106 tests (the pure
 model and math layers at 97-100 % instruction coverage, the Swing layer being
 the remaining gap), and an event-driven EDT-safe API.
 
+**Live showcase:** the wheel runs in the browser on the [uni-old-projects site](https://daniilperkin-uni.github.io/uni-old-projects/#pe1_selection_wheel) — the spin physics ported 1:1, alongside captures of the desktop app.
+
 <img src="wheel.png" alt="Selection Wheel screenshot" width="70%">
 
 ## Quick Start
