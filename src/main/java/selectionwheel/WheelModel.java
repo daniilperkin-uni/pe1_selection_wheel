@@ -2,6 +2,7 @@ package selectionwheel;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Pure, testable state holder for a wheel of fortune.
@@ -54,9 +55,10 @@ public final class WheelModel {
 	 * Replaces the list of selectable items. Resets the rotation angle
 	 * to {@code 0} and stops any in-flight spin.
 	 *
-	 * @param items new list of items
+	 * @param items new list of items; no element may be {@code null}
 	 * @throws IllegalArgumentException if {@code items} is null, empty,
 	 *                                  or larger than {@link #ITEM_LIMIT}
+	 * @throws NullPointerException     if any element is {@code null}
 	 */
 	public void setItems(List<String> items) {
 		if (items == null) {
@@ -69,6 +71,11 @@ public final class WheelModel {
 		if (n > ITEM_LIMIT) {
 			throw new IllegalArgumentException(
 					"items size " + n + " exceeds limit " + ITEM_LIMIT);
+		}
+		// A null label would NPE in WheelRenderer on the EDT during the
+		// first paint, so reject it at the model boundary instead.
+		for (int i = 0; i < n; i++) {
+			Objects.requireNonNull(items.get(i), "items[" + i + "] must not be null");
 		}
 		this.items = new ArrayList<>(items);
 		this.numSections = n;
@@ -131,7 +138,18 @@ public final class WheelModel {
 		return maxSpinSpeedDegPerSec;
 	}
 
+	/**
+	 * @param v maximum spin speed in deg/s; must be {@code > 0} and finite
+	 * @throws IllegalArgumentException if {@code v <= 0} or not finite
+	 */
 	public void setMaxSpinSpeedDegPerSec(double v) {
+		// A non-positive or NaN limit used to slip through and then blew up
+		// in WheelMath.clampSpeed on every drag release, inside the EDT
+		// handler, which silently killed the spin feature for good.
+		if (Double.isNaN(v) || Double.isInfinite(v) || v <= 0) {
+			throw new IllegalArgumentException(
+					"maxSpinSpeed must be > 0 and finite (was " + v + ")");
+		}
 		this.maxSpinSpeedDegPerSec = v;
 	}
 
@@ -140,13 +158,13 @@ public final class WheelModel {
 	}
 
 	/**
-	 * @param deceleration deg/s^2; must be {@code <= 0}
-	 * @throws IllegalArgumentException if {@code deceleration > 0}
+	 * @param deceleration deg/s^2; must be {@code <= 0} and finite
+	 * @throws IllegalArgumentException if {@code deceleration > 0} or not finite
 	 */
 	public void setSpinDeceleration(double deceleration) {
-		if (deceleration > 0) {
+		if (Double.isNaN(deceleration) || Double.isInfinite(deceleration) || deceleration > 0) {
 			throw new IllegalArgumentException(
-					"deceleration must be <= 0 (was " + deceleration + ")");
+					"deceleration must be <= 0 and finite (was " + deceleration + ")");
 		}
 		this.spinDeceleration = deceleration;
 	}
@@ -155,15 +173,23 @@ public final class WheelModel {
 	 * Starts a decelerating spin. No-op if {@code speedDegPerSec <= 0}
 	 * or {@code direction == 0}.
 	 *
-	 * @param speedDegPerSec initial speed magnitude (deg/s)
+	 * @param speedDegPerSec initial speed magnitude (deg/s), finite
 	 * @param direction      {@code +1} or {@code -1}
-	 * @param deceleration   deg/s^2, must be {@code <= 0}
-	 * @throws IllegalArgumentException if {@code deceleration > 0}
+	 * @param deceleration   deg/s^2, must be {@code <= 0} and finite
+	 * @throws IllegalArgumentException if {@code deceleration > 0}, or if
+	 *                                  speed or deceleration is not finite
 	 */
 	public void startSpin(double speedDegPerSec, int direction, double deceleration) {
-		if (deceleration > 0) {
+		if (Double.isNaN(deceleration) || Double.isInfinite(deceleration) || deceleration > 0) {
 			throw new IllegalArgumentException(
-					"deceleration must be <= 0 (was " + deceleration + ")");
+					"deceleration must be <= 0 and finite (was " + deceleration + ")");
+		}
+		// A NaN/infinite speed passes the "<= 0" no-op test below and then
+		// poisons the rotation angle: spinning stays true forever and the
+		// renderer is asked to paint NaN coordinates.
+		if (Double.isNaN(speedDegPerSec) || Double.isInfinite(speedDegPerSec)) {
+			throw new IllegalArgumentException(
+					"speedDegPerSec must be finite (was " + speedDegPerSec + ")");
 		}
 		if (speedDegPerSec <= 0 || direction == 0) {
 			return;

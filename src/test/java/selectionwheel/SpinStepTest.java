@@ -92,14 +92,16 @@ class SpinStepTest {
 				.isInstanceOf(IllegalArgumentException.class);
 	}
 
-	// ----- immutability -----
+	// ----- immutability / purity -----
 
 	@Test
-	void spinStep_isImmutableRecord() {
+	void spinStep_computeIsPureAndTheRecordIsImmutable() {
 		SpinStep step = SpinStep.compute(360, 1, -20, 0.01);
 		assertThat(step.deltaDeg()).isEqualTo(3.6, within(1e-9));
-		// No setters on a record - the test would not compile if any existed.
-		// We assert that the record components are final.
-		assertThat(step).isIn(SpinStep.compute(360, 1, -20, 0.01));
+		// Immutability is a compiler guarantee: SpinStep is a record, so its
+		// components are final and there are no setters. What is worth
+		// asserting is that compute() is pure - equal inputs give an equal
+		// value, which is what makes the spin physics testable.
+		assertThat(step).isEqualTo(SpinStep.compute(360, 1, -20, 0.01));
 	}
 }

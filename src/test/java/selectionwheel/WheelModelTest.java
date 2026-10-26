@@ -76,6 +76,18 @@ class WheelModelTest {
 		assertThat(model.isSpinning()).isFalse();
 	}
 
+	@Test
+	void setItems_rejectsNullElement() {
+		// A null label used to survive the size checks and then NPE inside
+		// WheelRenderer on the EDT during the first paint.
+		WheelModel model = new WheelModel(List.of("A", "B"));
+		List<String> withNull = java.util.Arrays.asList("A", null, "C");
+		assertThatThrownBy(() -> model.setItems(withNull))
+				.isInstanceOf(NullPointerException.class)
+				.hasMessageContaining("items[1]");
+		assertThat(model.getItems()).containsExactly("A", "B");
+	}
+
 	// ----- rotation / selection -----
 
 	@Test
@@ -125,6 +137,41 @@ class WheelModelTest {
 	}
 
 	@Test
+	void setMaxSpinSpeed_acceptsPositiveValue() {
+		WheelModel model = new WheelModel(List.of("A"));
+		model.setMaxSpinSpeedDegPerSec(720);
+		assertThat(model.getMaxSpinSpeedDegPerSec()).isEqualTo(720);
+	}
+
+	@Test
+	void setMaxSpinSpeed_rejectsNonPositiveValues() {
+		// A negative limit used to be stored as-is; WheelMath.clampSpeed then
+		// threw on every drag release inside the EDT handler, which killed
+		// the spin feature silently for the rest of the session.
+		WheelModel model = new WheelModel(List.of("A"));
+		assertThatThrownBy(() -> model.setMaxSpinSpeedDegPerSec(0))
+				.isInstanceOf(IllegalArgumentException.class)
+				.hasMessageContaining("maxSpinSpeed must be > 0");
+		assertThatThrownBy(() -> model.setMaxSpinSpeedDegPerSec(-360))
+				.isInstanceOf(IllegalArgumentException.class)
+				.hasMessageContaining("maxSpinSpeed must be > 0");
+		assertThat(model.getMaxSpinSpeedDegPerSec()).isEqualTo(360);
+	}
+
+	@Test
+	void setMaxSpinSpeed_rejectsNonFiniteValues() {
+		WheelModel model = new WheelModel(List.of("A"));
+		assertThatThrownBy(() -> model.setMaxSpinSpeedDegPerSec(Double.NaN))
+				.isInstanceOf(IllegalArgumentException.class)
+				.hasMessageContaining("maxSpinSpeed must be > 0");
+		assertThatThrownBy(() -> model.setMaxSpinSpeedDegPerSec(Double.POSITIVE_INFINITY))
+				.isInstanceOf(IllegalArgumentException.class);
+		assertThatThrownBy(() -> model.setMaxSpinSpeedDegPerSec(Double.NEGATIVE_INFINITY))
+				.isInstanceOf(IllegalArgumentException.class);
+		assertThat(model.getMaxSpinSpeedDegPerSec()).isEqualTo(360);
+	}
+
+	@Test
 	void defaultDeceleration_isMinus20() {
 		WheelModel model = new WheelModel(List.of("A"));
 		assertThat(model.getSpinDeceleration()).isEqualTo(-20);
@@ -146,6 +193,19 @@ class WheelModelTest {
 		assertThat(model.getSpinDeceleration()).isEqualTo(0);
 	}
 
+	@Test
+	void setSpinDeceleration_rejectsNonFiniteValues() {
+		// NaN passes a plain "> 0" test, so it used to be stored and then
+		// made every tick produce NaN angles.
+		WheelModel model = new WheelModel(List.of("A"));
+		assertThatThrownBy(() -> model.setSpinDeceleration(Double.NaN))
+				.isInstanceOf(IllegalArgumentException.class)
+				.hasMessageContaining("deceleration must be <= 0");
+		assertThatThrownBy(() -> model.setSpinDeceleration(Double.NEGATIVE_INFINITY))
+				.isInstanceOf(IllegalArgumentException.class);
+		assertThat(model.getSpinDeceleration()).isEqualTo(-20);
+	}
+
 	// ----- startSpin -----
 
 	@Test
@@ -161,6 +221,32 @@ class WheelModelTest {
 		WheelModel model = new WheelModel(List.of("A", "B"));
 		assertThatThrownBy(() -> model.startSpin(360, 1, 10))
 				.isInstanceOf(IllegalArgumentException.class);
+	}
+
+	@Test
+	void startSpin_rejectsNonFiniteSpeed() {
+		// NaN passes the "speed <= 0" no-op check, so the model used to end
+		// up spinning forever with a NaN rotation angle.
+		WheelModel model = new WheelModel(List.of("A", "B"));
+		assertThatThrownBy(() -> model.startSpin(Double.NaN, 1, -20))
+				.isInstanceOf(IllegalArgumentException.class)
+				.hasMessageContaining("speedDegPerSec must be finite");
+		assertThatThrownBy(() -> model.startSpin(Double.POSITIVE_INFINITY, 1, -20))
+				.isInstanceOf(IllegalArgumentException.class)
+				.hasMessageContaining("speedDegPerSec must be finite");
+		assertThat(model.isSpinning()).isFalse();
+		assertThat(model.getRotationAngleDeg()).isEqualTo(0);
+	}
+
+	@Test
+	void startSpin_rejectsNonFiniteDeceleration() {
+		WheelModel model = new WheelModel(List.of("A", "B"));
+		assertThatThrownBy(() -> model.startSpin(360, 1, Double.NaN))
+				.isInstanceOf(IllegalArgumentException.class)
+				.hasMessageContaining("deceleration must be <= 0");
+		assertThatThrownBy(() -> model.startSpin(360, 1, Double.NEGATIVE_INFINITY))
+				.isInstanceOf(IllegalArgumentException.class);
+		assertThat(model.isSpinning()).isFalse();
 	}
 
 	@Test
@@ -256,18 +342,28 @@ class WheelModelTest {
 	// ----- integration: full spin from start to rest -----
 
 	@Test
-	void fullSpin_comesToRestAndFinalSelectionIsDeterministic() {
-		// speed=360, decel=-20, dt=0.01s. Time to stop: 360/20 = 18 seconds = 1800 ticks.
-		// Total rotation: 360 * 18 - 0.5 * 20 * 18^2 = 6480 - 3240 = 3240 deg
-		// Mod 360 = 0 deg -> selection index 0 -> "A"
+	void fullSpin_comesToRestAtTheExactTickCountAndSweep() {
+		// speed=360, decel=-20, dt=0.01s: the speed drops by 0.2 per tick.
+		// After 1800 ticks the accumulated speed is a tiny positive residue
+		// (~1.5e-13 deg/s) instead of exactly 0, so the loop needs one more
+		// tick to observe the stop: 1801 ticks in total.
+		// Swept angle = sum over k=0..1800 of 0.01 * (360 - 0.2k) = 3241.8 deg
+		// (not 3240: the final tick still rotates by 0.002 deg).
 		WheelModel model = new WheelModel(List.of("A", "B", "C", "D"));
 		model.startSpin(360, 1, -20);
 		int ticks = 0;
+		double sweptDeg = 0;
 		while (model.isSpinning() && ticks < 10000) {
-			model.tickSpin(0.01);
+			sweptDeg += model.tickSpin(0.01).deltaDeg();
 			ticks++;
 		}
 		assertThat(model.isSpinning()).isFalse();
+		assertThat(ticks).isEqualTo(1801);
+		assertThat(sweptDeg).isEqualTo(3241.8, within(1e-6));
+		// The model stores the normalized angle: 3241.8 % 360 = 1.8 deg.
+		assertThat(model.getRotationAngleDeg()).isEqualTo(1.8, within(1e-6));
+		// 1.8 deg is inside the first section, which is why "A" wins. The
+		// angle assertions above are what actually pin the result down.
 		assertThat(model.getSelectedItem()).isEqualTo("A");
 	}
 }

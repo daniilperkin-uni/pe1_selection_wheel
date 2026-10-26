@@ -4,7 +4,7 @@
 
 A reusable Swing-based wheel-of-fortune selector library for teaching purposes.
 Originally developed as a PE1 WS24/25 exercise project; refactored into a
-testable, well-architected Java library with a Maven build, 106 tests (the pure
+testable, well-architected Java library with a Maven build, 120 tests (the pure
 model and math layers at 97-100 % instruction coverage, the Swing layer being
 the remaining gap), and an event-driven EDT-safe API.
 
@@ -172,17 +172,17 @@ The project uses JUnit 5 + AssertJ. Tests are organized by layer:
 | Test Class                      | Tests | Coverage                                     |
 |---------------------------------|-------|----------------------------------------------|
 | `WheelMathTest`                 | 27    | Section angle, normalization, selection index, speed clamping, drag delta |
-| `SpinStepTest`                  | 10    | Spin physics: forward/reverse, deceleration, perpetual, argument validation |
+| `SpinStepTest`                  | 10    | Spin physics: forward/reverse, deceleration, perpetual, argument validation, purity |
 | `TickMathTest`                  | 11    | Triangle geometry, polygon scaling/centering, idempotency (regression for cumulative-scaling bug) |
-| `WheelModelTest`                | 26    | Construction, setItems, rotation, selection, spin lifecycle, full spin integration |
-| `SelectionWheelIntegrationTest` | 8     | Component-level: bounds, tick visibility, listener delivery, spin lifecycle, detach stops the spin |
+| `WheelModelTest`                | 33    | Construction, setItems, rotation, selection, spin lifecycle, negative/NaN parameter guards, full spin integration |
+| `SelectionWheelIntegrationTest` | 11    | Component-level: bounds, tick visibility, listener delivery and dedupe, spin lifecycle, detach stops the spin, `spinStopped` on setItems/restart |
 | `ContentReaderTest`             | 9     | Resource loading, missing/blank resource, empty/oversized lists, content verification, trimming |
 | `ContentReaderFileTest`         | 5     | Loading items from a user-chosen text file |
 | `MainWheelRandomTest`           | 4     | Injected random spin source |
-| `WheelRendererTest`             | 1     | Offscreen rendering smoke test |
-| `WheelPaintTest`                | 3     | Paint-level: cache invalidation must not change the rendered rotation, rotation is applied while painting, empty palette falls back to the defaults |
+| `WheelRendererTest`             | 4     | Offscreen rendering smoke test, UMBRELLA geometry for 1-3 items |
+| `WheelPaintTest`                | 4     | Paint-level: cache invalidation must not change the rendered rotation, rotation is applied while painting, empty palette falls back to the defaults, painted section matches the selected item |
 | `MainWheelInfoPanelTest`        | 2     | Info sidebar width is independent of the selected item's text length |
-| **Total**                       | **106**|                                              |
+| **Total**                       | **120**|                                              |
 
 ```bash
 ./mvnw.cmd test           # run all tests

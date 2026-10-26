@@ -188,7 +188,19 @@ final class WheelRenderer {
 	private void fillTriangle(Graphics2D g2d, double delta) {
 		/*
 		 * Method that draws section as a triangle (in case Shape=UMBRELLA was chosen)
+		 *
+		 * The triangle is the chord triangle of the section: apex at the
+		 * center, the other two corners on the circle. With one or two
+		 * items the section is a half or full circle and that triangle
+		 * collapses onto the diameter (delta = 180 gives dx = 2r and
+		 * dy = 0, so all three points are collinear and fillPolygon
+		 * paints zero area). Fall back to the arc wedge for those
+		 * degenerate cases; every other shape is unaffected.
 		 */
+		if (delta >= 180) {
+			fillArc(g2d, delta);
+			return;
+		}
 		int[] xpoints = new int[3];
 		xpoints[0] = (int) center.getX();
 		xpoints[1] = (int) center.getX() + radius;

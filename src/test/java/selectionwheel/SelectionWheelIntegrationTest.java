@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Integration smoke test for {@link SelectionWheel}.
@@ -108,11 +109,22 @@ class SelectionWheelIntegrationTest {
 		});
 
 		SwingUtilities.invokeAndWait(() -> {
-			wheel.setRotationAngle(90);
+			// Two angles inside the same section (A spans 0..90 deg on a
+			// 4-item wheel): the listener must fire exactly once.
+			wheel.setRotationAngle(10);
+			assertThat(selectionChangeCount.get())
+					.as("first change into a new section must be reported")
+					.isEqualTo(1);
+			wheel.setRotationAngle(20);
+			assertThat(selectionChangeCount.get())
+					.as("moving inside the same section must not report again")
+					.isEqualTo(1);
+			// Crossing into section B must report exactly once more.
+			wheel.setRotationAngle(100);
+			assertThat(selectionChangeCount.get()).isEqualTo(2);
 		});
 		assertThat(lastSelection.get()).isEqualTo("B");
-		assertThat(selectionChangeCount.get()).isGreaterThanOrEqualTo(1);
-		assertThat(lastRotation.get()).isEqualTo(90.0);
+		assertThat(lastRotation.get()).isEqualTo(100.0);
 	}
 
 	@Test
@@ -180,6 +192,76 @@ class SelectionWheelIntegrationTest {
 			assertThat(wheel.getItems()).containsExactly("X", "Y");
 			assertThat(wheel.getSelectedItem()).isEqualTo("X");
 			assertThat(wheel.getRotationAngle()).isEqualTo(0.0);
+		});
+	}
+
+	@Test
+	void setItems_duringSpin_deliversSpinStopped() throws Exception {
+		// WheelModel.setItems() clears the spinning flag itself, so the old
+		// ordering (model.setItems() before spinStop()) made spinStop() see
+		// an already stopped model and deliver nothing. A listener that
+		// disabled its UI on spinStarted() stayed disabled for good.
+		SelectionWheel wheel = createWheel(List.of("A", "B", "C"));
+		AtomicInteger startCount = new AtomicInteger(0);
+		AtomicInteger stopCount = new AtomicInteger(0);
+		wheel.addWheelListener(new WheelListener() {
+			@Override
+			public void spinStarted() { startCount.incrementAndGet(); }
+			@Override
+			public void spinStopped() { stopCount.incrementAndGet(); }
+		});
+
+		SwingUtilities.invokeAndWait(() -> {
+			wheel.spinStartAsync(360, 1, -20);
+			assertThat(wheel.isSpinning()).isTrue();
+			wheel.setItems(new ArrayList<>(List.of("X", "Y")));
+			// All of this runs on the EDT, so the events have been delivered
+			// synchronously before the assertions.
+			assertThat(wheel.isSpinning()).isFalse();
+			assertThat(startCount.get()).isEqualTo(1);
+			assertThat(stopCount.get())
+					.as("replacing the items must stop the spin and report it")
+					.isEqualTo(1);
+		});
+	}
+
+	@Test
+	void restartingASpin_deliversSpinStoppedForTheInterruptedSpin() throws Exception {
+		// doStartSpin() used to restart via stopSpinTimer(), which stopped
+		// the old timer without reporting the stop of the spin it killed.
+		SelectionWheel wheel = createWheel(List.of("A", "B"));
+		AtomicInteger startCount = new AtomicInteger(0);
+		AtomicInteger stopCount = new AtomicInteger(0);
+		wheel.addWheelListener(new WheelListener() {
+			@Override
+			public void spinStarted() { startCount.incrementAndGet(); }
+			@Override
+			public void spinStopped() { stopCount.incrementAndGet(); }
+		});
+
+		SwingUtilities.invokeAndWait(() -> {
+			wheel.spinStartAsync(360, 1, -20);
+			assertThat(wheel.isSpinning()).isTrue();
+			wheel.spinStartAsync(180, 1, -20);
+			assertThat(wheel.isSpinning()).isTrue();
+			assertThat(startCount.get()).isEqualTo(2);
+			assertThat(stopCount.get())
+					.as("the interrupted spin must report its stop")
+					.isEqualTo(1);
+			wheel.spinStop();
+			assertThat(stopCount.get()).isEqualTo(2);
+		});
+	}
+
+	@Test
+	void spinStartAsync_rejectsNonFiniteSpeedAndDeceleration() throws Exception {
+		SelectionWheel wheel = createWheel(List.of("A", "B"));
+		SwingUtilities.invokeAndWait(() -> {
+			assertThatThrownBy(() -> wheel.spinStartAsync(Double.NaN, 1, -20))
+					.isInstanceOf(IllegalArgumentException.class);
+			assertThatThrownBy(() -> wheel.spinStartAsync(360, 1, Double.NaN))
+					.isInstanceOf(IllegalArgumentException.class);
+			assertThat(wheel.isSpinning()).isFalse();
 		});
 	}
 }

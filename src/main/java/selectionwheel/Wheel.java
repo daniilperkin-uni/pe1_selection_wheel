@@ -234,10 +234,18 @@ public class Wheel extends JPanel {
 		/*
 		 * Set the list of items displayed inside the sections of the wheel.
 		 * The initial list is set in constructor method and can be changed during runtime.
+		 *
+		 * Must be called on the EDT: the stop has to run while the model
+		 * still reports the spin as active, otherwise no spinStopped()
+		 * event is delivered.
 		 */
+		// Stop before the model resets itself: WheelModel.setItems() clears
+		// the spinning flag, and spinStop() only reports a stop while that
+		// flag is still set. Doing it the other way round silently swallowed
+		// the event and left listener-driven UIs disabled for good.
+		spinStop();
 		model.setItems(list);
 		image = null;
-		spinStop();
 		setRotationAngle(0);
 		this.repaint();
 	}
@@ -371,16 +379,20 @@ public class Wheel extends JPanel {
 	 * <p>Safe to call from any thread; non-EDT callers are marshalled to
 	 * the EDT via {@link SwingUtilities#invokeLater}.
 	 *
-	 * @param speed        initial angular speed in degrees per second ({@code >= 0})
+	 * @param speed        initial angular speed in degrees per second ({@code >= 0}, finite)
 	 * @param direction    {@code +1} for counter-clockwise, {@code -1} for clockwise,
 	 *                     {@code 0} to start a stopped spin (no-op)
-	 * @param deceleration {@code <= 0}; degrees per second per second
-	 * @throws IllegalArgumentException if {@code deceleration > 0}
+	 * @param deceleration {@code <= 0} and finite; degrees per second per second
+	 * @throws IllegalArgumentException if {@code deceleration > 0} or if
+	 *                                  speed or deceleration is not finite
 	 */
 	public void spinStartAsync(double speed, int direction, double deceleration) {
-		if (deceleration > 0) {
+		if (Double.isNaN(deceleration) || Double.isInfinite(deceleration) || deceleration > 0) {
 			throw new IllegalArgumentException(
-					"deceleration must be <= 0 (was " + deceleration + ")");
+					"deceleration must be <= 0 and finite (was " + deceleration + ")");
+		}
+		if (Double.isNaN(speed) || Double.isInfinite(speed)) {
+			throw new IllegalArgumentException("speed must be finite (was " + speed + ")");
 		}
 		if (speed <= 0 || direction == 0) {
 			// No-op spin: nothing to animate.
@@ -395,8 +407,12 @@ public class Wheel extends JPanel {
 	}
 
 	private void doStartSpin(double speed, int direction, double deceleration) {
-		// Stop any in-flight spin before starting a new one.
-		stopSpinTimer();
+		// Stop any in-flight spin before starting a new one. This must go
+		// through spinStop() rather than stopSpinTimer(): the old timer is
+		// stopped either way, but only spinStop() reports the matching
+		// spinStopped() for the interrupted spin, so listeners that
+		// disabled themselves on spinStarted() are re-enabled.
+		spinStop();
 		model.startSpin(speed, direction, deceleration);
 		int intervalMs = 1000 / REFRESH_RATE;
 		spinTimer = new Timer(intervalMs, e -> onSpinTick());
