@@ -92,6 +92,19 @@ class SpinStepTest {
 				.isInstanceOf(IllegalArgumentException.class);
 	}
 
+	@Test
+	void compute_rejectsNonFiniteDt() {
+		// NaN is false against every comparison, so the "dt <= 0" guard used
+		// to let it through and return a step with NaN delta and NaN speed.
+		assertThatThrownBy(() -> SpinStep.compute(360, 1, -20, Double.NaN))
+				.isInstanceOf(IllegalArgumentException.class)
+				.hasMessageContaining("dtSeconds must be > 0 and finite");
+		assertThatThrownBy(() -> SpinStep.compute(360, 1, -20, Double.POSITIVE_INFINITY))
+				.isInstanceOf(IllegalArgumentException.class);
+		assertThatThrownBy(() -> SpinStep.compute(360, 1, -20, Double.NEGATIVE_INFINITY))
+				.isInstanceOf(IllegalArgumentException.class);
+	}
+
 	// ----- immutability / purity -----
 
 	@Test

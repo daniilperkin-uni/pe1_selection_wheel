@@ -34,14 +34,19 @@ public record SpinStep(double deltaDeg, double newSpeed, boolean shouldStop) {
 	 * @param direction     {@code +1} or {@code -1} for direction;
 	 *                      {@code 0} is treated as already stopped
 	 * @param deceleration  {@code <= 0}; deg/s^2
-	 * @param dtSeconds     tick duration in seconds ({@code > 0})
+	 * @param dtSeconds     tick duration in seconds ({@code > 0}, finite)
 	 * @return a {@link SpinStep} describing this tick's motion
+	 * @throws IllegalArgumentException if {@code dtSeconds} is not a
+	 *                                  positive finite number
 	 */
 	public static SpinStep compute(double currentSpeed, int direction,
 			double deceleration, double dtSeconds) {
-		if (dtSeconds <= 0) {
+		// NaN compares false against every bound, so a plain "<= 0" guard
+		// let it through and poisoned delta/newSpeed; an infinite tick
+		// produced the same NaN state one step later.
+		if (!Double.isFinite(dtSeconds) || dtSeconds <= 0) {
 			throw new IllegalArgumentException(
-					"dtSeconds must be > 0 (was " + dtSeconds + ")");
+					"dtSeconds must be > 0 and finite (was " + dtSeconds + ")");
 		}
 		if (currentSpeed <= 0 || direction == 0) {
 			return new SpinStep(0, 0, true);

@@ -203,14 +203,18 @@ public final class WheelModel {
 	/**
 	 * Advances the spin by one tick of {@code dtSeconds}.
 	 *
-	 * @param dtSeconds tick duration in seconds ({@code > 0})
+	 * @param dtSeconds tick duration in seconds ({@code > 0}, finite)
 	 * @return the {@link SpinStep} that describes this tick
-	 * @throws IllegalArgumentException if {@code dtSeconds <= 0}
+	 * @throws IllegalArgumentException if {@code dtSeconds} is not a
+	 *                                  positive finite number
 	 */
 	public SpinStep tickSpin(double dtSeconds) {
-		if (dtSeconds <= 0) {
+		// NaN compares false against every bound: the plain "<= 0" guard let
+		// it through, SpinStep.compute then produced NaN delta/newSpeed and
+		// the model stayed spinning forever with a NaN rotation angle.
+		if (!Double.isFinite(dtSeconds) || dtSeconds <= 0) {
 			throw new IllegalArgumentException(
-					"dtSeconds must be > 0 (was " + dtSeconds + ")");
+					"dtSeconds must be > 0 and finite (was " + dtSeconds + ")");
 		}
 		if (!spinning) {
 			return new SpinStep(0, 0, true);

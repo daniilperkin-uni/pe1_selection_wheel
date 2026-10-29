@@ -320,6 +320,25 @@ class WheelModelTest {
 				.isInstanceOf(IllegalArgumentException.class);
 	}
 
+	@Test
+	void tickSpin_rejectsNonFiniteDtWithoutPoisoningTheState() {
+		WheelModel model = new WheelModel(List.of("A", "B"));
+		model.startSpin(360, 1, -20);
+
+		// "dtSeconds <= 0" is false for NaN, so the guard let it through and
+		// the model ended up spinning forever with a NaN rotation angle.
+		assertThatThrownBy(() -> model.tickSpin(Double.NaN))
+				.isInstanceOf(IllegalArgumentException.class)
+				.hasMessageContaining("dtSeconds must be > 0 and finite");
+		assertThatThrownBy(() -> model.tickSpin(Double.POSITIVE_INFINITY))
+				.isInstanceOf(IllegalArgumentException.class);
+
+		assertThat(model.getRotationAngleDeg()).isEqualTo(0.0);
+		assertThat(model.isSpinning()).isTrue();
+		// The rejected tick must not have advanced the spin either.
+		assertThat(model.tickSpin(0.01).deltaDeg()).isEqualTo(3.6, within(1e-9));
+	}
+
 	// ----- stopSpin -----
 
 	@Test
