@@ -171,19 +171,6 @@ public class Wheel extends JPanel {
 		return hasBorders;
 	}
 
-	/**
-	 * @param borders {@code true} to draw the borders, {@code false} to hide
-	 *                them
-	 * @deprecated the getter-like name made this mutator read as a query and
-	 *             collided with the new {@link #hasBorders()} accessor; use
-	 *             {@link #setHasBorders(boolean)} instead. Kept as a
-	 *             delegating alias for one release.
-	 */
-	@Deprecated
-	public void hasBorders(boolean borders) {
-		setHasBorders(borders);
-	}
-
 	public void setShape(Shape shape) {
 		/*
 		 * Set the shape of the wheel.

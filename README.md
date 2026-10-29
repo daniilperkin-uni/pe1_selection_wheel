@@ -50,9 +50,12 @@ java -cp target/classes selectionwheel.MainWheel
 ### Package
 
 ```bash
-./mvnw.cmd package          # produces target/selection-wheel-1.0.0-SNAPSHOT.jar
-java -jar target/selection-wheel-1.0.0-SNAPSHOT.jar   # launches the app
+./mvnw.cmd package          # produces target/selection-wheel-1.0.0.jar
+java -jar target/selection-wheel-1.0.0.jar   # launches the app
 ```
+
+Or grab the prebuilt jar from the
+[latest release](https://github.com/daniilperkin-uni/pe1_selection_wheel/releases/latest).
 
 ## How to Use
 
@@ -173,9 +176,7 @@ API notes:
 - The constructor, `setItems` and `setColorScheme` take any `List`; `getItems`
   and `getColorScheme` return defensive copies.
 - `setHasBorders(boolean)` toggles the section dividers and outlines,
-  `hasBorders()` reports the current state. The old `hasBorders(boolean)`
-  mutator still compiles but is `@Deprecated` and will be removed in the next
-  release.
+  `hasBorders()` reports the current state.
 - Every mutator must run on the EDT (see the threading contract below).
   `spinStartAsync` and `spinStop` are the two that marshal for you.
 
@@ -222,6 +223,7 @@ pe1_selection_wheel/
 ├── .github/workflows/ci.yml         # CI: xvfb-run -a ./mvnw -B verify on Temurin 21
 ├── AGENTS.md                        # Project directives: architecture and hard contracts
 ├── README.md                        # This file
+├── CHANGELOG.md                     # Release history (Keep a Changelog)
 ├── LICENSE                          # MIT
 ├── wheel.png                        # Screenshot
 └── src/

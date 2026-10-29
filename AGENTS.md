@@ -57,5 +57,5 @@ Each item below was a real defect found by a QA audit; the named test guards it.
 
 ## 7. Documentation and audit artifacts
 
-*   `README.md` and this file are the only tracked Markdown documents. Keep both in sync with the code — test counts, API names, the jar file name and the coverage claim are all facts a reader checks first.
+*   `README.md`, `CHANGELOG.md` and this file are the only tracked Markdown documents. Keep them in sync with the code — test counts, API names, the jar file name and the coverage claim are all facts a reader checks first. Every release adds a `CHANGELOG.md` entry and bumps `pom.xml` to the tagged version.
 *   `QA_REPORT.md` and `QA_FIX_REPORT.md` are audit artifacts and are **untracked by design**. Never `git add` them, and never edit `QA_REPORT.md` (it is the input the fix report answers).

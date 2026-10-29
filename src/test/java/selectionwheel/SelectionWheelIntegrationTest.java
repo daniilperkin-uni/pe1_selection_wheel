@@ -70,7 +70,6 @@ class SelectionWheelIntegrationTest {
 	}
 
 	@Test
-	@SuppressWarnings("deprecation")
 	void borders_canBeSetAndQueried() throws Exception {
 		SelectionWheel wheel = createWheel(List.of("A", "B"));
 		SwingUtilities.invokeAndWait(() -> {
@@ -78,8 +77,7 @@ class SelectionWheelIntegrationTest {
 			wheel.setHasBorders(true);
 			assertThat(wheel.hasBorders()).isTrue();
 			assertThat(wheel.getWheel().hasBorders()).isTrue();
-			// The deprecated mutator must keep delegating for one release.
-			wheel.hasBorders(false);
+			wheel.setHasBorders(false);
 			assertThat(wheel.hasBorders()).isFalse();
 		});
 	}

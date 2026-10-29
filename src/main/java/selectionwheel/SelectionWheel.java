@@ -99,17 +99,6 @@ public class SelectionWheel extends JPanel {
 		return wheel.hasBorders();
 	}
 
-	/**
-	 * @param borders {@code true} to draw the borders, {@code false} to hide
-	 *                them
-	 * @deprecated use {@link #setHasBorders(boolean)} instead; this
-	 *             getter-like alias is kept for one release.
-	 */
-	@Deprecated
-	public void hasBorders(boolean borders) {
-		setHasBorders(borders);
-	}
-
 	public int getRadius() {
 		/*
 		 * Get radius of the wheel.
