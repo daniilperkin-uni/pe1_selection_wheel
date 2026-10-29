@@ -145,7 +145,8 @@ ArrayList<String> items = MyContentReader.loadItems();
 ### Using the Wheel as a Library
 
 ```java
-// Create a wheel with custom items
+// Create a wheel with custom items - any List works
+List<String> items = List.of("Cat", "Dog", "Rabbit");
 SelectionWheel wheel = new SelectionWheel(items);
 wheel.hasBorders(true);
 wheel.setShape(Wheel.Shape.CIRCLE);  // or Wheel.Shape.UMBRELLA
@@ -188,6 +189,14 @@ The project uses JUnit 5 + AssertJ. Tests are organized by layer:
 ./mvnw.cmd test           # run all tests
 ./mvnw.cmd test -Dtest=WheelModelTest   # run a single test class
 ```
+
+> **PowerShell:** quote the system property. Unquoted, PowerShell splits
+> `-Dtest=WheelModelTest` and Maven fails with
+> `Unknown lifecycle phase ".test=WheelModelTest"`:
+>
+> ```powershell
+> .\mvnw.cmd test "-Dtest=WheelModelTest"
+> ```
 
 ## Project Structure
 
