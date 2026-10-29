@@ -4,7 +4,7 @@
 
 A reusable Swing-based wheel-of-fortune selector library for teaching purposes.
 Originally developed as a PE1 WS24/25 exercise project; refactored into a
-testable, well-architected Java library with a Maven build, 134 tests (the pure
+testable, well-architected Java library with a Maven build, 135 tests (the pure
 model and math layers at 97-100 % instruction coverage, the Swing layer being
 the remaining gap), and an event-driven EDT-safe API.
 
@@ -176,7 +176,7 @@ The project uses JUnit 5 + AssertJ. Tests are organized by layer:
 | `SpinStepTest`                  | 11    | Spin physics: forward/reverse, deceleration, perpetual, argument validation, purity |
 | `TickMathTest`                  | 11    | Triangle geometry, polygon scaling/centering, idempotency (regression for cumulative-scaling bug) |
 | `WheelModelTest`                | 34    | Construction, setItems, rotation, selection, spin lifecycle, negative/NaN/non-finite parameter guards, full spin integration |
-| `SelectionWheelIntegrationTest` | 14    | Component-level: preferred size, bounds, tick visibility, listener delivery and dedupe, self-removing listeners, spin lifecycle, detach stops the spin, `spinStopped` on setItems/restart, `List` API |
+| `SelectionWheelIntegrationTest` | 15    | Component-level: preferred size, borders setter/query, bounds, tick visibility, listener delivery and dedupe, self-removing listeners, spin lifecycle, detach stops the spin, `spinStopped` on setItems/restart, `List` API |
 | `ContentReaderTest`             | 10    | Resource loading, missing/blank resource, empty/oversized lists, content verification, trimming, UTF-8 BOM |
 | `ContentReaderFileTest`         | 5     | Loading items from a user-chosen text file |
 | `MainWheelRandomTest`           | 4     | Injected random spin source |
@@ -184,7 +184,7 @@ The project uses JUnit 5 + AssertJ. Tests are organized by layer:
 | `WheelPaintTest`                | 6     | Paint-level: cache invalidation must not change the rendered rotation, rotation is applied while painting, zero/negative sizes are a no-op, the caller's Graphics is not mutated, empty palette falls back to the defaults, painted section matches the selected item |
 | `WheelMouseTest`                | 2     | Click-to-stop hit testing when the rendered image is larger than the component |
 | `MainWheelInfoPanelTest`        | 2     | Info sidebar width is independent of the selected item's text length |
-| **Total**                       | **134**|                                              |
+| **Total**                       | **135**|                                              |
 
 ```bash
 ./mvnw.cmd test           # run all tests
