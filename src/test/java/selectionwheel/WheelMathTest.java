@@ -176,6 +176,18 @@ class WheelMathTest {
 	}
 
 	@Test
+	void dragDeltaDeg_doesNotDropAStepThatTouchesTheVerticalAxis() {
+		Point2D center = new Point2D.Double(100, 100);
+		// prev sits exactly on the vertical diameter (dx == 0), curr is due
+		// right of the center: a quarter turn. The slope-based formula
+		// divided by the zero dx and returned 0, so the wheel ignored the
+		// step every time the pointer crossed that line.
+		double delta = WheelMath.dragDeltaDeg(
+				new Point2D.Double(100, 50), new Point2D.Double(150, 100), center);
+		assertThat(delta).isEqualTo(90.0, within(1e-9));
+	}
+
+	@Test
 	void dragDeltaDeg_returnsZeroForNaNComputedDelta() {
 		// Identical prev and curr produce k1==k2, atan(0/...) = 0. Not NaN.
 		// Construct a case where prev and curr are both on the center vertical:

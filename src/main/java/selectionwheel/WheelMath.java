@@ -148,27 +148,28 @@ public final class WheelMath {
 
 	/**
 	 * Computes the angular delta (in degrees) between two mouse positions
-	 * relative to a rotation center, using the angle-between-vectors formula
-	 * from the original {@code Wheel.mouseDragged}.
+	 * relative to a rotation center, as the difference of their polar angles.
 	 *
-	 * <p>Returns {@code 0} for the degenerate cases the original code
-	 * silently dropped: vertical drag (where the slope calculation would
-	 * divide by zero) and {@code NaN} results from the arctangent.
+	 * <p>Uses {@link Math#atan2(double, double)} rather than the slope-based
+	 * tangent subtraction of the original code. That form returned {@code 0}
+	 * whenever either position sat exactly on the vertical diameter through
+	 * the center (it divided by a zero {@code dx}), dropping a drag step, and
+	 * its {@code atan} result was only correct modulo 180 degrees.
+	 *
+	 * <p>Returns {@code 0} for {@code NaN} results (for example when a
+	 * position is exactly the center or has a {@code NaN} coordinate).
 	 *
 	 * @param prev   previous mouse position
 	 * @param curr   current mouse position
 	 * @param center wheel rotation center
-	 * @return signed delta in degrees, or {@code 0} for degenerate inputs
+	 * @return signed delta in degrees along the shorter arc
 	 */
 	public static double dragDeltaDeg(Point2D prev, Point2D curr, Point2D center) {
-		double dxPrev = prev.getX() - center.getX();
-		double dxCurr = curr.getX() - center.getX();
-		if (dxPrev == 0 || dxCurr == 0) {
-			return 0;
-		}
-		double k1 = (prev.getY() - center.getY()) / dxPrev;
-		double k2 = (curr.getY() - center.getY()) / dxCurr;
-		double delta = Math.toDegrees(Math.atan((k2 - k1) / (1 + k2 * k1)));
+		double prevAngleDeg = Math.toDegrees(Math.atan2(
+				prev.getY() - center.getY(), prev.getX() - center.getX()));
+		double currAngleDeg = Math.toDegrees(Math.atan2(
+				curr.getY() - center.getY(), curr.getX() - center.getX()));
+		double delta = shortestAngleDeltaDeg(prevAngleDeg, currAngleDeg);
 		return Double.isNaN(delta) ? 0 : delta;
 	}
 }
