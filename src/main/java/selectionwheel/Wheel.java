@@ -150,11 +150,18 @@ public class Wheel extends JPanel {
 		super.setBounds(x, y, width, height);
 	}
 
+	/**
+	 * Turns the section dividers and outlines on or off. When switched on,
+	 * the borders of the sections, of the circle and the centre point are
+	 * drawn.
+	 *
+	 * <p>Despite the getter-like {@code has} prefix this is a mutator; there
+	 * is no matching query method.
+	 *
+	 * @param borders {@code true} to draw the borders, {@code false} to hide
+	 *                them
+	 */
 	public void hasBorders(boolean borders) {
-		/*
-		 * Borders on/off.
-		 * If switched on, borders of sections and circle + circle center will be visible.
-		 */
 		hasBorders = borders;
 		image = null;
 		spinStop();

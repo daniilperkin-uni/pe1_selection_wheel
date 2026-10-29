@@ -84,10 +84,17 @@ public class SelectionWheel extends JPanel {
 		return tickVisible;
 	}
 
+	/**
+	 * Turns the section dividers and outlines on or off.
+	 *
+	 * <p>The name comes from the original exercise API: despite the
+	 * getter-like {@code has} prefix this is a mutator, and no matching query
+	 * method exists.
+	 *
+	 * @param borders {@code true} to draw the borders, {@code false} to hide
+	 *                them
+	 */
 	public void hasBorders(boolean borders) {
-		/*
-		 * Check if the wheel borders are on.
-		 */
 		wheel.hasBorders(borders);
 	}
 
