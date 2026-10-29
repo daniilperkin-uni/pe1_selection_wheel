@@ -129,17 +129,39 @@ class WheelMathTest {
 
 	@Test
 	void computeInitialSpeed_clampsToMax() {
-		// 3600 deg in 1000 ms -> 3600 deg/s, capped to 360
+		// 180 deg in 1 ms -> 180000 deg/s, capped to 360. A displacement of
+		// a whole number of turns would be indistinguishable from no
+		// movement at all, so the clamp case uses a sub-turn drag.
 		double speed = WheelMath.computeInitialSpeedDegPerSec(
-				0, 3600, 1000, 2000, 360);
+				0, 180, 1000, 1001, 360);
 		assertThat(speed).isEqualTo(360.0);
 	}
 
 	@Test
 	void computeInitialSpeed_clampsToMaxNegativeDirection() {
 		double speed = WheelMath.computeInitialSpeedDegPerSec(
-				3600, 0, 1000, 2000, 360);
+				180, 0, 1000, 1001, 360);
 		assertThat(speed).isEqualTo(-360.0);
+	}
+
+	@Test
+	void computeInitialSpeed_forwardDragAcrossTheZeroBoundary_keepsItsDirection() {
+		// A forward drag from 350 to 10 degrees is +20 degrees. The model
+		// stores both endpoints normalized to [-360, 360), so the raw
+		// difference is -340 and used to clamp to a full-speed reverse fling.
+		assertThat(WheelMath.computeInitialSpeedDegPerSec(350, 10, 1000, 1100, 360))
+				.as("forward drag across 360/0 must stay positive")
+				.isEqualTo(200.0, within(1e-9));
+		assertThat(WheelMath.computeInitialSpeedDegPerSec(10, 350, 1000, 1100, 360))
+				.as("backward drag across 0/360 must stay negative")
+				.isEqualTo(-200.0, within(1e-9));
+	}
+
+	@Test
+	void computeInitialSpeed_displacementOfAWholeTurn_isNoDrag() {
+		// 360 deg of endpoint displacement is the same wheel position.
+		assertThat(WheelMath.computeInitialSpeedDegPerSec(0, 360, 1000, 1100, 360))
+				.isEqualTo(0.0);
 	}
 
 	// ----- dragDeltaDeg -----

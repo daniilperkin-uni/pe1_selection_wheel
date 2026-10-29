@@ -84,8 +84,14 @@ public final class WheelMath {
 
 	/**
 	 * Computes the initial spin speed (in degrees per second, with sign
-	 * indicating direction) from a mouse drag of {@code angleEndDeg -
-	 * angleStartDeg} taking {@code timeEndMs - timeStartMs} milliseconds.
+	 * indicating direction) from a mouse drag from {@code angleStartDeg} to
+	 * {@code angleEndDeg} taking {@code timeEndMs - timeStartMs} milliseconds.
+	 *
+	 * <p>The angular displacement is measured along the shorter arc. The
+	 * model normalizes every angle to {@code [-360, 360)}, so a plain
+	 * subtraction turns a forward drag across the 0/360 degree boundary
+	 * (350 to 10 degrees, i.e. +20 degrees) into a -340 degree drag and
+	 * flings the wheel at full speed in the opposite direction.
 	 *
 	 * <p>The magnitude is clamped to {@code maxSpeedDegPerSec}. Returns
 	 * {@code 0} if the elapsed time is zero or the raw computation yields
@@ -107,12 +113,37 @@ public final class WheelMath {
 		if (elapsed == 0) {
 			return 0;
 		}
-		double raw = 1000.0 * (angleEndDeg - angleStartDeg) / elapsed;
+		double raw = 1000.0 * shortestAngleDeltaDeg(angleStartDeg, angleEndDeg) / elapsed;
 		if (Double.isNaN(raw) || Double.isInfinite(raw)) {
 			return 0;
 		}
 		int sign = (int) Math.signum(raw);
 		return sign * clampSpeed(Math.abs(raw), maxSpeedDegPerSec);
+	}
+
+	/**
+	 * Returns the signed angular displacement from {@code startDeg} to
+	 * {@code endDeg} along the shorter arc, in {@code [-180, 180]}.
+	 *
+	 * <p>Only the difference matters, so inputs normalized to
+	 * {@code [-360, 360)} (as {@link WheelModel} stores them) produce the
+	 * same result as their unwrapped equivalents: 350 to 10 degrees yields
+	 * {@code +20}, not {@code -340}. Displacements that are exact multiples
+	 * of a full turn collapse to {@code 0}, because a wheel angle cannot
+	 * distinguish them from no movement at all.
+	 *
+	 * @param startDeg start angle in degrees
+	 * @param endDeg   end angle in degrees
+	 * @return the signed displacement along the shorter arc
+	 */
+	private static double shortestAngleDeltaDeg(double startDeg, double endDeg) {
+		double delta = (endDeg - startDeg) % 360.0;
+		if (delta > 180.0) {
+			delta -= 360.0;
+		} else if (delta < -180.0) {
+			delta += 360.0;
+		}
+		return delta;
 	}
 
 	/**
