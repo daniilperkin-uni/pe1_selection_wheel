@@ -100,7 +100,7 @@ public class MainWheel {
 
 		// Initialize the SelectionWheel and configure its properties
 		wheel = new SelectionWheel(items);
-		wheel.hasBorders(true);
+		wheel.setHasBorders(true);
 
 		// The wheel goes in the center - BorderLayout will resize it automatically.
 		mainWindow.add(wheel, BorderLayout.CENTER);

@@ -148,7 +148,7 @@ ArrayList<String> items = MyContentReader.loadItems();
 // Create a wheel with custom items - any List works
 List<String> items = List.of("Cat", "Dog", "Rabbit");
 SelectionWheel wheel = new SelectionWheel(items);
-wheel.hasBorders(true);
+wheel.setHasBorders(true);
 wheel.setShape(Wheel.Shape.CIRCLE);  // or Wheel.Shape.UMBRELLA
 wheel.setMaxSpinSpeed(720);          // degrees per second
 wheel.setSpinDeceleration(-50);      // degrees per second^2

@@ -155,18 +155,33 @@ public class Wheel extends JPanel {
 	 * the borders of the sections, of the circle and the centre point are
 	 * drawn.
 	 *
-	 * <p>Despite the getter-like {@code has} prefix this is a mutator; there
-	 * is no matching query method.
-	 *
 	 * @param borders {@code true} to draw the borders, {@code false} to hide
 	 *                them
 	 */
-	public void hasBorders(boolean borders) {
+	public void setHasBorders(boolean borders) {
 		hasBorders = borders;
 		image = null;
 		spinStop();
 		setRotationAngle(0);
 		this.repaint();
+	}
+
+	/** @return {@code true} if the section dividers and outlines are drawn */
+	public boolean hasBorders() {
+		return hasBorders;
+	}
+
+	/**
+	 * @param borders {@code true} to draw the borders, {@code false} to hide
+	 *                them
+	 * @deprecated the getter-like name made this mutator read as a query and
+	 *             collided with the new {@link #hasBorders()} accessor; use
+	 *             {@link #setHasBorders(boolean)} instead. Kept as a
+	 *             delegating alias for one release.
+	 */
+	@Deprecated
+	public void hasBorders(boolean borders) {
+		setHasBorders(borders);
 	}
 
 	public void setShape(Shape shape) {

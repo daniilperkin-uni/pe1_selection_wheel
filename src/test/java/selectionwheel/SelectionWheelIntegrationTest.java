@@ -70,6 +70,21 @@ class SelectionWheelIntegrationTest {
 	}
 
 	@Test
+	@SuppressWarnings("deprecation")
+	void borders_canBeSetAndQueried() throws Exception {
+		SelectionWheel wheel = createWheel(List.of("A", "B"));
+		SwingUtilities.invokeAndWait(() -> {
+			assertThat(wheel.hasBorders()).isFalse();
+			wheel.setHasBorders(true);
+			assertThat(wheel.hasBorders()).isTrue();
+			assertThat(wheel.getWheel().hasBorders()).isTrue();
+			// The deprecated mutator must keep delegating for one release.
+			wheel.hasBorders(false);
+			assertThat(wheel.hasBorders()).isFalse();
+		});
+	}
+
+	@Test
 	void preferredAndMinimumSize_areNonZeroAndRespectAnExplicitValue() throws Exception {
 		SelectionWheel wheel = createWheel(List.of("A", "B"));
 		SwingUtilities.invokeAndWait(() -> {
