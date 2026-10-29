@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
@@ -162,6 +163,42 @@ class SelectionWheelIntegrationTest {
 				.as("spinStopped should have fired within the timeout")
 				.isTrue();
 		assertThat(stopCount.get()).isGreaterThanOrEqualTo(1);
+	}
+
+	@Test
+	void removingAListenerInsideItsCallback_isAllowed() throws Exception {
+		// Idiomatic Swing: a one-shot listener unregisters itself in the
+		// callback. Iterating the backing ArrayList threw
+		// ConcurrentModificationException and aborted the EDT callback.
+		SelectionWheel wheel = createWheel(List.of("A", "B"));
+		AtomicInteger selfRemovingCalls = new AtomicInteger(0);
+		AtomicInteger otherCalls = new AtomicInteger(0);
+
+		WheelListener selfRemoving = new WheelListener() {
+			@Override
+			public void spinStopped() {
+				selfRemovingCalls.incrementAndGet();
+				wheel.removeWheelListener(this);
+			}
+		};
+		wheel.addWheelListener(selfRemoving);
+		wheel.addWheelListener(new WheelListener() {
+			@Override
+			public void spinStopped() { otherCalls.incrementAndGet(); }
+		});
+		wheel.addWheelListener(new WheelListener() {
+			@Override
+			public void spinStopped() { otherCalls.incrementAndGet(); }
+		});
+
+		SwingUtilities.invokeAndWait(() -> {
+			wheel.spinStartAsync(100, 1, -20);
+			assertThatCode(() -> wheel.spinStop()).doesNotThrowAnyException();
+			assertThat(selfRemovingCalls.get()).isEqualTo(1);
+			assertThat(otherCalls.get())
+					.as("the remaining listeners must still receive the event")
+					.isEqualTo(2);
+		});
 	}
 
 	@Test

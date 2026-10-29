@@ -502,20 +502,34 @@ public class Wheel extends JPanel {
 		listeners.remove(l);
 	}
 
+	/**
+	 * Returns the current listeners as an array so a callback can add or
+	 * remove a listener without invalidating the iteration. Iterating the
+	 * backing {@code ArrayList} directly threw
+	 * {@code ConcurrentModificationException} on the idiomatic Swing pattern
+	 * of a one-shot listener unregistering itself in its callback.
+	 *
+	 * <p>Listeners added during a dispatch receive the next event, matching
+	 * the AWT/Swing listener convention.
+	 */
+	private WheelListener[] listenerSnapshot() {
+		return listeners.toArray(new WheelListener[0]);
+	}
+
 	private void fireSpinStarted() {
-		for (WheelListener l : listeners) l.spinStarted();
+		for (WheelListener l : listenerSnapshot()) l.spinStarted();
 	}
 
 	private void fireSpinStopped() {
-		for (WheelListener l : listeners) l.spinStopped();
+		for (WheelListener l : listenerSnapshot()) l.spinStopped();
 	}
 
 	private void fireSpinSpeedChanged(double speed) {
-		for (WheelListener l : listeners) l.spinSpeedChanged(speed);
+		for (WheelListener l : listenerSnapshot()) l.spinSpeedChanged(speed);
 	}
 
 	private void fireRotationChanged(double angle) {
-		for (WheelListener l : listeners) l.rotationChanged(angle);
+		for (WheelListener l : listenerSnapshot()) l.rotationChanged(angle);
 	}
 
 	private void fireSelectionChangedMaybe() {
@@ -523,7 +537,7 @@ public class Wheel extends JPanel {
 		if (current == null) return;
 		if (!current.equals(lastReportedSelection)) {
 			lastReportedSelection = current;
-			for (WheelListener l : listeners) l.selectionChanged(current);
+			for (WheelListener l : listenerSnapshot()) l.selectionChanged(current);
 		}
 	}
 
