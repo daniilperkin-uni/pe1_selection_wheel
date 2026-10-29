@@ -1,8 +1,11 @@
 package selectionwheel;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
@@ -66,6 +69,22 @@ class WheelPaintTest {
 		assertThat(differingPixels(before[0], after[0]))
 				.as("the same rotation must paint the same image regardless of the cache state")
 				.isZero();
+	}
+
+	@Test
+	void paintComponent_withNonPositiveDimensions_doesNotThrow() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			Wheel wheel = new Wheel(List.of("A", "B"));
+			for (Dimension size : List.of(new Dimension(0, 0), new Dimension(-20, 50))) {
+				wheel.setBounds(0, 0, size.width, size.height);
+				Graphics2D g = new BufferedImage(10, 10, BufferedImage.TYPE_INT_ARGB).createGraphics();
+				assertThatCode(() -> wheel.paintComponent(g))
+						.as("painting a %dx%d component must be a no-op, not an EDT crash",
+								size.width, size.height)
+						.doesNotThrowAnyException();
+				g.dispose();
+			}
+		});
 	}
 
 	@Test

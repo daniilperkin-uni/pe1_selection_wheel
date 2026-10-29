@@ -337,6 +337,14 @@ public class Wheel extends JPanel {
 		// Guard against paint during construction (before model is set).
 		if (model == null) return;
 
+		// Nothing to rasterize before the component has a positive size:
+		// that happens before the first layout, inside a hidden card or tab,
+		// and while a container is being resized to zero. WheelRenderer
+		// allocates a BufferedImage of exactly this size, and BufferedImage
+		// rejects non-positive dimensions with an IllegalArgumentException
+		// that used to escape on the EDT.
+		if (getWidth() <= 0 || getHeight() <= 0) return;
+
 		if (image == null) {
 			image = drawImage();
 			rotationCenter = new Point2D.Double(
