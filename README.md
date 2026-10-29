@@ -111,7 +111,9 @@ rebuild: the file is read from the classpath. Alternatively use the
   must be called on the **Swing EDT**.
 - `spinStartAsync` and `spinStop` are EDT-aware: they marshal to the EDT via
   `SwingUtilities.invokeLater` if called from another thread.
-- `WheelListener` callbacks are always delivered on the EDT.
+- `WheelListener` callbacks are always delivered on the EDT, over a snapshot of
+  the listener list: a one-shot listener may remove itself inside its callback,
+  and a listener added during a dispatch receives the next event.
 - Spin animation runs on a `javax.swing.Timer` (EDT-native), not a raw `Thread`.
 - A spin ends on its own deceleration, on `spinStop`, or when the `Wheel`
   component is removed from its container (`removeNotify`) - a detached
@@ -132,14 +134,14 @@ The default `ContentReader.importListOfItems()` reads from the classpath resourc
 
 ```java
 public class MyContentReader {
-    public static ArrayList<String> loadItems() {
+    public static List<String> loadItems() {
         // Your custom loading logic
         return items;
     }
 }
 
 // In MainWheel.main():
-ArrayList<String> items = MyContentReader.loadItems();
+List<String> items = MyContentReader.loadItems();
 ```
 
 ### Using the Wheel as a Library
@@ -165,6 +167,17 @@ wheel.addWheelListener(new WheelListener() {
 // Programmatically spin
 wheel.spinStartAsync(360, 1, -20);   // 360 deg/s, clockwise on screen, -20 deg/s^2
 ```
+
+API notes:
+
+- The constructor, `setItems` and `setColorScheme` take any `List`; `getItems`
+  and `getColorScheme` return defensive copies.
+- `setHasBorders(boolean)` toggles the section dividers and outlines,
+  `hasBorders()` reports the current state. The old `hasBorders(boolean)`
+  mutator still compiles but is `@Deprecated` and will be removed in the next
+  release.
+- Every mutator must run on the EDT (see the threading contract below).
+  `spinStartAsync` and `spinStop` are the two that marshal for you.
 
 ## Testing
 
@@ -203,10 +216,13 @@ The project uses JUnit 5 + AssertJ. Tests are organized by layer:
 
 ```
 pe1_selection_wheel/
-├── pom.xml                          # Maven build (JDK 21, JUnit 5, AssertJ)
+├── pom.xml                          # Maven build (JDK 21, JUnit 5, AssertJ, JaCoCo)
 ├── mvnw / mvnw.cmd                  # Maven Wrapper (no global Maven install needed)
 ├── .mvn/wrapper/                    # Wrapper config
+├── .github/workflows/ci.yml         # CI: xvfb-run -a ./mvnw -B verify on Temurin 21
+├── AGENTS.md                        # Project directives: architecture and hard contracts
 ├── README.md                        # This file
+├── LICENSE                          # MIT
 ├── wheel.png                        # Screenshot
 └── src/
     ├── main/
