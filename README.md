@@ -162,7 +162,7 @@ wheel.addWheelListener(new WheelListener() {
 });
 
 // Programmatically spin
-wheel.spinStartAsync(360, 1, -20);   // 360 deg/s, counter-clockwise, -20 deg/s^2
+wheel.spinStartAsync(360, 1, -20);   // 360 deg/s, clockwise on screen, -20 deg/s^2
 ```
 
 ## Testing

@@ -174,7 +174,8 @@ public final class WheelModel {
 	 * or {@code direction == 0}.
 	 *
 	 * @param speedDegPerSec initial speed magnitude (deg/s), finite
-	 * @param direction      {@code +1} or {@code -1}
+	 * @param direction      {@code +1} for clockwise on screen, {@code -1} for
+	 *                       counter-clockwise
 	 * @param deceleration   deg/s^2, must be {@code <= 0} and finite
 	 * @throws IllegalArgumentException if {@code deceleration > 0}, or if
 	 *                                  speed or deceleration is not finite

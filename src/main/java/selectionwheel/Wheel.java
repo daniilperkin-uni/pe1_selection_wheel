@@ -400,7 +400,9 @@ public class Wheel extends JPanel {
 	 * the EDT via {@link SwingUtilities#invokeLater}.
 	 *
 	 * @param speed        initial angular speed in degrees per second ({@code >= 0}, finite)
-	 * @param direction    {@code +1} for counter-clockwise, {@code -1} for clockwise,
+	 * @param direction    {@code +1} for clockwise on screen (the AWT y axis
+	 *                     points down, so a positive rotation turns +X
+	 *                     towards +Y), {@code -1} for counter-clockwise,
 	 *                     {@code 0} to start a stopped spin (no-op)
 	 * @param deceleration {@code <= 0} and finite; degrees per second per second
 	 * @throws IllegalArgumentException if {@code deceleration > 0} or if

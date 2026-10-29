@@ -20,8 +20,8 @@ public record SpinStep(double deltaDeg, double newSpeed, boolean shouldStop) {
 	 * Computes the next spin step from the current spin state.
 	 *
 	 * <p>Given a spin moving at {@code currentSpeed} deg/s in
-	 * {@code direction} ({@code +1} = counter-clockwise,
-	 * {@code -1} = clockwise), decelerating at {@code deceleration}
+	 * {@code direction} ({@code +1} = clockwise on screen,
+	 * {@code -1} = counter-clockwise), decelerating at {@code deceleration}
 	 * deg/s^2, over a tick of {@code dtSeconds}:
 	 * <ul>
 	 *   <li>{@code deltaDeg = direction * currentSpeed * dt}</li>
