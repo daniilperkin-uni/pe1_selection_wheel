@@ -227,20 +227,6 @@ public class SelectionWheel extends JPanel {
 		this.setBounds(this.getX(), this.getY(), this.getWidth(), this.getHeight());
 	}
 
-	public double getTickHeight() {
-		/*
-		 * Get tick height (informational; see Tick).
-		 */
-		return tick.getTickHeight();
-	}
-
-	public void setTickHeight(int height) {
-		/*
-		 * Set tick height (currently without visual effect; see Tick).
-		 */
-		tick.setTickHeight(height);
-	}
-
 	public Polygon getTickPolygon() {
 		/*
 		 * Get tick polygon.

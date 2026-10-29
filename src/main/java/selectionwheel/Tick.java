@@ -26,7 +26,6 @@ public class Tick extends JPanel {
 	private Polygon polygon = null;
 
 	private int tickWidth = 20;
-	private int tickHeight = 20;
 
 	public int getTickWidth() {
 		/*
@@ -40,22 +39,6 @@ public class Tick extends JPanel {
 		 * Set tick width.
 		 */
 		tickWidth = width;
-	}
-
-	public int getTickHeight() {
-		/*
-		 * Get tick height. Informational: the tick currently renders into
-		 * the full container height, so the value does not affect layout.
-		 */
-		return tickHeight;
-	}
-
-	public void setTickHeight(int height) {
-		/*
-		 * Set tick height. The tick currently renders into the full
-		 * container height, so this value has no visual effect yet.
-		 */
-		tickHeight = height;
 	}
 
 	public Polygon getPolygon() {
