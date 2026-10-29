@@ -83,11 +83,19 @@ public class Wheel extends JPanel {
 			public void mousePressed(MouseEvent e) {
 				mouseDragPosition = new Point2D.Double(e.getX(), e.getY());
 				// to stop the spinning if the circle is clicked on
-				double distance = Math.sqrt(
-						Math.pow(mouseDragPosition.getX() - center.getX(), 2)
-								+ Math.pow(mouseDragPosition.getY() - center.getY(), 2));
-				if (distance <= radius) {
-					spinStop();
+				// Hit-test against rotationCenter, not center: the rendered
+				// image can be larger than the component (the renderer zooms
+				// in when the labels get too small), and only rotationCenter
+				// is in component coordinates - center belongs to the
+				// offscreen image and drifts away from the visible wheel.
+				// It is null until the first paint, when nothing is visible.
+				if (rotationCenter != null) {
+					double distance = Math.sqrt(
+							Math.pow(mouseDragPosition.getX() - rotationCenter.getX(), 2)
+									+ Math.pow(mouseDragPosition.getY() - rotationCenter.getY(), 2));
+					if (distance <= radius) {
+						spinStop();
+					}
 				}
 				// to measure initial speed
 				timeStart = System.currentTimeMillis();
