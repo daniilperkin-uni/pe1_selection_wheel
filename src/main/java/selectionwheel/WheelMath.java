@@ -94,8 +94,8 @@ public final class WheelMath {
 	 * flings the wheel at full speed in the opposite direction.
 	 *
 	 * <p>The magnitude is clamped to {@code maxSpeedDegPerSec}. Returns
-	 * {@code 0} if the elapsed time is zero or the raw computation yields
-	 * {@code NaN}/{@code Infinity} (no valid drag).
+	 * {@code 0} if the elapsed time is not positive or the raw computation
+	 * yields {@code NaN}/{@code Infinity} (no valid drag).
 	 *
 	 * @param angleStartDeg       rotation angle at mouse press
 	 * @param angleEndDeg        rotation angle at mouse release
@@ -110,7 +110,9 @@ public final class WheelMath {
 			long timeStartMs, long timeEndMs,
 			double maxSpeedDegPerSec) {
 		long elapsed = timeEndMs - timeStartMs;
-		if (elapsed == 0) {
+		// A negative span (clock adjustment between press and release) would
+		// divide by a negative number and flip the drag direction.
+		if (elapsed <= 0) {
 			return 0;
 		}
 		double raw = 1000.0 * shortestAngleDeltaDeg(angleStartDeg, angleEndDeg) / elapsed;

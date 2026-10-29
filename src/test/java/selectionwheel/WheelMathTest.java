@@ -113,6 +113,15 @@ class WheelMathTest {
 	}
 
 	@Test
+	void computeInitialSpeed_returnsZeroForNegativeElapsed() {
+		// A clock adjustment between press and release can hand the release
+		// an earlier timestamp; dividing by the negative span used to invert
+		// the drag direction (-180 deg/s for a forward drag here).
+		assertThat(WheelMath.computeInitialSpeedDegPerSec(0, 90, 1000, 500, 360))
+				.isEqualTo(0.0);
+	}
+
+	@Test
 	void computeInitialSpeed_computesAngularVelocity() {
 		// 90 deg in 1000 ms -> 90 deg/s
 		double speed = WheelMath.computeInitialSpeedDegPerSec(
