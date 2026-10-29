@@ -355,13 +355,17 @@ public class Wheel extends JPanel {
 					(int) (this.getHeight() / 2 - center.getY()));
 		}
 
-		Graphics2D gPanel = (Graphics2D) g;
+		// Paint on a copy: rotating the caller's Graphics in place leaked the
+		// wheel angle into everything else drawn with that context, so a
+		// second paint of the same component compounded the rotation.
+		Graphics2D gPanel = (Graphics2D) g.create();
 		gPanel.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		gPanel.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 
 		gPanel.rotate(Math.toRadians(model.getRotationAngleDeg()),
 				rotationCenter.getX(), rotationCenter.getY());
 		gPanel.drawImage(image, (int) imagePosition.getX(), (int) imagePosition.getY(), null);
+		gPanel.dispose();
 	}
 
 	private BufferedImage drawImage() {

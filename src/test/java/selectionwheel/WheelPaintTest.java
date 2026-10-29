@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
@@ -84,6 +85,27 @@ class WheelPaintTest {
 						.doesNotThrowAnyException();
 				g.dispose();
 			}
+		});
+	}
+
+	@Test
+	void paintComponent_doesNotMutateTheCallersGraphics() throws Exception {
+		SwingUtilities.invokeAndWait(() -> {
+			Wheel wheel = new Wheel(List.of("A", "B", "C", "D"));
+			wheel.setBounds(0, 0, 400, 400);
+			wheel.setRotationAngle(45);
+
+			Graphics2D g = new BufferedImage(400, 400, BufferedImage.TYPE_INT_ARGB).createGraphics();
+			AffineTransform before = g.getTransform();
+			wheel.paintComponent(g);
+
+			// Rotating the caller's Graphics in place left the 45 degree
+			// transform behind, so everything painted afterwards with the
+			// same context - including a second paint pass - was rotated too.
+			assertThat(g.getTransform())
+					.as("paintComponent must rotate a copy, not the caller's Graphics")
+					.isEqualTo(before);
+			g.dispose();
 		});
 	}
 
