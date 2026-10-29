@@ -1,6 +1,7 @@
 package selectionwheel;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Polygon;
 import java.util.ArrayList;
@@ -24,6 +25,28 @@ public class SelectionWheel extends JPanel {
 	/** Package-private accessor used by tests instead of direct field access. */
 	Tick getTick() {
 		return tick;
+	}
+
+	/**
+	 * Fallback side length (in pixels) reported when no explicit preferred or
+	 * minimum size has been set. The composite uses a null layout, so the
+	 * inherited metrics are 0x0 and a standard layout manager or
+	 * {@code Window.pack()} would collapse it to nothing.
+	 */
+	private static final int DEFAULT_SIZE = 400;
+
+	@Override
+	public Dimension getPreferredSize() {
+		Dimension size = super.getPreferredSize();
+		if (size.width > 0 && size.height > 0) return size;
+		return new Dimension(DEFAULT_SIZE, DEFAULT_SIZE);
+	}
+
+	@Override
+	public Dimension getMinimumSize() {
+		Dimension size = super.getMinimumSize();
+		if (size.width > 0 && size.height > 0) return size;
+		return new Dimension(DEFAULT_SIZE, DEFAULT_SIZE);
 	}
 
 	@Override

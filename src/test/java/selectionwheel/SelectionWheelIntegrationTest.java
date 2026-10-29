@@ -3,6 +3,7 @@ package selectionwheel;
 import org.junit.jupiter.api.Test;
 
 import javax.swing.SwingUtilities;
+import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +46,25 @@ class SelectionWheelIntegrationTest {
 			assertThat(wheel.isSpinning()).isFalse();
 			assertThat(wheel.getSpinSpeed()).isEqualTo(0.0);
 			assertThat(wheel.getSelectedItem()).isEqualTo("A");
+		});
+	}
+
+	@Test
+	void preferredAndMinimumSize_areNonZeroAndRespectAnExplicitValue() throws Exception {
+		SelectionWheel wheel = createWheel(List.of("A", "B"));
+		SwingUtilities.invokeAndWait(() -> {
+			// The composite uses a null layout, so the inherited metrics are
+			// 0x0 and a FlowLayout/GridBagLayout or Window.pack() collapsed it.
+			assertThat(wheel.getPreferredSize().width).isPositive();
+			assertThat(wheel.getPreferredSize().height).isPositive();
+			assertThat(wheel.getMinimumSize().width).isPositive();
+			assertThat(wheel.getMinimumSize().height).isPositive();
+
+			Dimension explicit = new Dimension(250, 260);
+			wheel.setPreferredSize(explicit);
+			assertThat(wheel.getPreferredSize())
+					.as("an explicitly set preferred size must win over the default")
+					.isEqualTo(explicit);
 		});
 	}
 
