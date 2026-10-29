@@ -3,6 +3,7 @@ package selectionwheel;
 import org.junit.jupiter.api.Test;
 
 import javax.swing.SwingUtilities;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.util.ArrayList;
@@ -46,6 +47,25 @@ class SelectionWheelIntegrationTest {
 			assertThat(wheel.isSpinning()).isFalse();
 			assertThat(wheel.getSpinSpeed()).isEqualTo(0.0);
 			assertThat(wheel.getSelectedItem()).isEqualTo("A");
+		});
+	}
+
+	@Test
+	void constructor_acceptsAnyListImplementation() throws Exception {
+		// The public API used to demand ArrayList, so List.of(...) - the
+		// natural way to build a fixed item list - did not compile, even
+		// though Wheel and WheelModel accept any List.
+		final SelectionWheel[] holder = new SelectionWheel[1];
+		SwingUtilities.invokeAndWait(() -> holder[0] = new SelectionWheel(List.of("A", "B")));
+		assertThat(holder[0].getItems()).containsExactly("A", "B");
+
+		SwingUtilities.invokeAndWait(() -> {
+			holder[0].setColorScheme(List.of(Color.RED, Color.BLUE));
+			assertThat(holder[0].getColorScheme()).containsExactly(Color.RED, Color.BLUE);
+			// addColor() must survive an immutable list being passed in.
+			holder[0].addColor(Color.GREEN);
+			assertThat(holder[0].getColorScheme())
+					.containsExactly(Color.RED, Color.BLUE, Color.GREEN);
 		});
 	}
 

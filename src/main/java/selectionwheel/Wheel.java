@@ -202,8 +202,10 @@ public class Wheel extends JPanel {
 	public void setColorScheme(List<Color> colors) {
 		/*
 		 * Set List of colors used for sections of the wheel.
+		 * Stored as a copy: callers may pass an immutable list (List.of),
+		 * and addColor() has to keep working after that.
 		 */
-		this.colors = colors;
+		this.colors = colors == null ? null : new ArrayList<>(colors);
 		image = null;
 		spinStop();
 		setRotationAngle(0);

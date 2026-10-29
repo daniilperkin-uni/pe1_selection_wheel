@@ -127,14 +127,14 @@ public class SelectionWheel extends JPanel {
 		wheel.setFont(font);
 	}
 
-	public ArrayList<String> getItems() {
+	public List<String> getItems() {
 		/*
 		 * Get the list of items for the wheel.
 		 */
 		return new ArrayList<>(wheel.getItems());
 	}
 
-	public void setItems(ArrayList<String> list) {
+	public void setItems(List<String> list) {
 		/*
 		 * Set the list of items for the wheel.
 		 */
@@ -170,7 +170,7 @@ public class SelectionWheel extends JPanel {
 		wheel.setSpinDeceleration(deceleration);
 	}
 
-	public ArrayList<Color> getColorScheme() {
+	public List<Color> getColorScheme() {
 		/*
 		 * Get color scheme of the wheel.
 		 */
@@ -178,7 +178,7 @@ public class SelectionWheel extends JPanel {
 		return colors == null ? null : new ArrayList<>(colors);
 	}
 
-	public void setColorScheme(ArrayList<Color> colors) {
+	public void setColorScheme(List<Color> colors) {
 		/*
 		 * Set color scheme of the wheel.
 		 */
@@ -241,7 +241,7 @@ public class SelectionWheel extends JPanel {
 		tick.setPolygon(polygon);
 	}
 
-	public SelectionWheel(ArrayList<String> listOfStrings) {
+	public SelectionWheel(List<String> listOfStrings) {
 		/*
 		 * Constructor - initializes tick and wheel.
 		 */
