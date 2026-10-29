@@ -102,6 +102,13 @@ public final class ContentReader {
     static ArrayList<String> parse(InputStream in) throws IOException {
         byte[] bytes = in.readAllBytes();
         String content = new String(bytes, StandardCharsets.UTF_8);
+        // Windows editors (Notepad among them) prefix UTF-8 files with a
+        // byte order mark, which decodes to U+FEFF. trim() only strips
+        // characters <= 0x20, so the mark survived into the first item and
+        // broke equality checks and comparisons against it.
+        if (!content.isEmpty() && content.charAt(0) == '\uFEFF') {
+            content = content.substring(1);
+        }
         String[] lines = content.split("\\r?\\n");
         ArrayList<String> items = new ArrayList<>();
         for (String line : lines) {

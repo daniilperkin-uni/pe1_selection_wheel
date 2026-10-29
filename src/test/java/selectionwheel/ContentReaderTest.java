@@ -125,6 +125,20 @@ class ContentReaderTest {
 	}
 
 	@Test
+	void parse_stripsUtf8Bom() throws IOException {
+		// Files saved by Windows editors start with EF BB BF, which decodes
+		// to U+FEFF and is not removed by trim().
+		byte[] bytesWithBom = new byte[] {
+				(byte) 0xEF, (byte) 0xBB, (byte) 0xBF,
+				'C', 'a', 't', '\n', 'D', 'o', 'g'};
+		try (InputStream in = new ByteArrayInputStream(bytesWithBom)) {
+			ArrayList<String> items = ContentReader.parse(in);
+			assertThat(items).containsExactly("Cat", "Dog");
+			assertThat(items.get(0)).isEqualTo("Cat");
+		}
+	}
+
+	@Test
 	void parse_trimsWhitespaceAndSkipsBlankLines() throws IOException {
 		try (InputStream in = new ByteArrayInputStream(
 				"  A  \n\n\t\nB\n".getBytes(StandardCharsets.UTF_8))) {
